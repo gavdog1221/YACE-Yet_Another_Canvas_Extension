@@ -686,7 +686,17 @@ button.doc-preview-btn-top { cursor: pointer !important; line-height: 1.4 !impor
 .canvas-viewer-scroll {
   height: 100% !important; overflow-y: auto !important; overflow-x: clip !important;
   padding: 20px 24px 28px !important; display: flex !important; flex-direction: column !important; gap: 10px !important;
+  box-sizing: border-box !important;
 }
+/* flex-shrink:0 is load-bearing, not cosmetic. This is a flex COLUMN with a
+   fixed height, and flex items default to flex-shrink:1 — so instead of
+   overflowing and becoming scrollable, every child was being squashed to fit
+   the viewport. On the Modules page (the longest view) that collapsed a
+   353px module down to 45px, left scrollHeight === clientHeight, and pinned
+   scrollTop at 0: the page looked completely static with no way to scroll.
+   The flex column is only here for the `gap`, so opting children out of
+   shrinking restores real overflow. */
+.canvas-viewer-scroll > * { flex-shrink: 0 !important; }
 .canvas-viewer-scroll::-webkit-scrollbar { width: 8px !important; }
 .canvas-viewer-scroll::-webkit-scrollbar-track { background: transparent !important; }
 .canvas-viewer-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px !important; }
