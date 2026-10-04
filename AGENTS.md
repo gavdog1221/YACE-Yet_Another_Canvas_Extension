@@ -50,11 +50,23 @@ Adding a new entrypoint requires editing **both** `build.mjs` and the `content_s
   the `_csrf_token` cookie (`getCsrfToken()` in `services/canvas-api.js`). Omitting the CSRF header
   → 401s. Base URL is always the `origin` export from `constants.js` (runtime origin).
 - **External non-Canvas fetches route through `background.js`** via
-  `browser.runtime.sendMessage({ type: 'FETCH_DINING_HOURS' | 'FETCH_DINING_MENU' })`. The
-  dashboard cannot CORS-fetch `foodpro.unh.edu` / `unh.edu` directly. Background tries multiple URL
-  variants (http/https, with/without `dtdate`) and validates responses contain `shortmenurecipes`.
+  `browser.runtime.sendMessage({ type: 'FETCH_DINING_HOURS' | 'FETCH_DINING_MENU' |
+  'FETCH_UNH_CALENDAR' })`. The dashboard cannot CORS-fetch `foodpro.unh.edu` / `unh.edu` /
+  `25livepub.collegenet.com` directly. Background tries multiple URL variants
+  (http/https, with/without `dtdate`) and validates responses contain `shortmenurecipes`.
 - Dining hall IDs are hardcoded numbers: `80` = Holloway (HoCo), `30` = Philbrook (closed on
   weekends — enforced as a hard rule in `services/dining-api.js`).
+- **Campus tools are strictly click-to-load.** Nothing scrapes at page load. Each tool renderer is
+  reached only from `renderTool()` in `components/campus-tools-modal.js`, which runs only from
+  `openCampusToolsModal()` / a tab click. Rendered tabs are kept alive in the `toolHosts` map (live
+  DOM nodes, never serialized `innerHTML` — that would drop every `addEventListener` on restore), so
+  revisiting a tab in the same session replays DOM instead of re-fetching. Adding a new tool means
+  adding a `data-tool` button + a branch in `renderTool()`; nothing else. The bus-routes and
+  "What's Happening on Campus" tabs were removed from this extension.
+- **Building hours are static** (`services/building-hours-static.js`): hardcoded tables, zero I/O.
+  When UNH posts a schedule change, edit the table there. `computeBuildingStatus()` still derives
+  live open/closed status from the current clock (last matching section wins, so a more specific
+  finals/break block overrides the generic one).
 
 ## Do NOT reformat the generated source
 

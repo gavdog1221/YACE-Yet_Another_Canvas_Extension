@@ -117,11 +117,8 @@ export async function injectWidget(container) {
     <button type="button" class="icon-btn campus-tools-btn" data-tool="buildings" title="Building Hours — MUB, Rec, Library" aria-haspopup="dialog" aria-expanded="false">
     <span class="campus-tools-icon">🏢</span><span class="campus-tools-label">Hours</span>
     </button>
-    <button type="button" class="icon-btn campus-tools-btn" data-tool="bus" title="Next Wildcat Transit bus" aria-haspopup="dialog" aria-expanded="false">
-    <span class="campus-tools-icon">🚌</span><span class="campus-tools-label">Bus</span>
-    </button>
-    <button type="button" class="icon-btn campus-tools-btn" data-tool="events" title="What's Happening on Campus" aria-haspopup="dialog" aria-expanded="false">
-    <span class="campus-tools-icon">🗓️</span><span class="campus-tools-label">Events</span>
+    <button type="button" class="icon-btn campus-tools-btn" data-tool="days" title="Days Off — UNH holidays, breaks &amp; closures" aria-haspopup="dialog" aria-expanded="false">
+    <span class="campus-tools-icon">🌴</span><span class="campus-tools-label">Days Off</span>
     </button>
     <button type="button" class="icon-btn campus-tools-btn" data-tool="export" title="Export Assignments as .ics Calendar" aria-haspopup="dialog" aria-expanded="false">
     <span class="campus-tools-icon">📅</span><span class="campus-tools-label">Export</span>

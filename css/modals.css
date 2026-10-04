@@ -115,6 +115,17 @@ button.doc-preview-btn-top { cursor: pointer !important; line-height: 1.4 !impor
   padding: 14px 18px !important;
   background: transparent !important;
 }
+/* Per-tab wrapper kept alive by campus-tools-modal's toolHosts map so switching
+   tabs re-attaches live DOM instead of re-running the view (and re-scraping).
+   It has to be a transparent flex pass-through, otherwise the views' own
+   "one child fills the column" rules (flex:1 on .do-tab-scroll etc.) would
+   resolve against a zero-height wrapper. */
+.campus-tools-body > .campus-tools-tool {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
 /* Bell 🔔 "Alerts" tab: recent-notification history list. */
 .notif-view-head {
   display: flex !important; align-items: center !important; justify-content: space-between !important;
@@ -562,8 +573,6 @@ button.doc-preview-btn-top { cursor: pointer !important; line-height: 1.4 !impor
 .bh-time { color: var(--text-primary) !important; text-align: right !important; font-variant-numeric: tabular-nums !important; min-width: 0 !important; margin-left: auto !important; }
 .bh-time.is-closed { color: var(--danger) !important; font-weight: 700 !important; }
 .bh-sep { color: var(--text-tertiary) !important; }
-.bh-loading, .bh-error { padding: 18px 4px !important; font-size: 12.5px !important; color: var(--text-secondary) !important; }
-.bh-error { color: var(--danger) !important; }
 
 /* ==========================================================================
  *  CANVAS VIEWER — custom YACE-styled renderings of Canvas pages

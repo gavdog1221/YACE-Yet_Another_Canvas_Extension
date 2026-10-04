@@ -10,9 +10,8 @@
 
 import { state } from '../state.js';
 import { renderBuildingHoursView } from '../views/building-hours-view.js';
-import { renderBusView } from '../views/bus-view.js';
+import { renderDaysOffView } from '../views/days-off-view.js';
 import { renderDiningView } from '../views/dining-view.js';
-import { renderEventsView } from '../views/events-view.js';
 import { renderExportView } from '../views/export-view.js';
 import { renderOptionsView } from '../views/options-view.js';
 import { renderRegistrationView } from '../views/registration-view.js';
@@ -21,7 +20,7 @@ import { renderNotificationsView } from '../views/notifications-view.js';
 import { getHiddenCourses } from '../storage/hidden-courses.js';
 
 // Which tab shows next time the modal opens
-// ('food' | 'registration' | 'rmp' | 'buildings' | 'bus' | 'events' | 'notifications' | 'export' | 'options').
+// ('food' | 'rmp' | 'registration' | 'buildings' | 'days' | 'notifications' | 'export' | 'options').
 let activeTool = 'food';
 
 // Reflect state.isDrawerOpen + the active tool on every 🍽/🧑‍🏫/🎓 header
@@ -55,6 +54,26 @@ function applyThemePalette(modal) {
     });
   }
 
+// Every tool renderer is invoked ONLY from renderTool() below, which itself
+// only runs from openCampusToolsModal() or a tab click — never at import time,
+// never from the widget's load path. So nothing scrapes until you actually
+// click a header button or a tab.
+//
+// Each rendered tab is then KEPT ALIVE in toolHosts rather than thrown away.
+// body.replaceChildren() detaches the outgoing tab (it stays in the map), and
+// returning to a tab — or just closing and reopening the modal — re-attaches
+// that same DOM instead of re-running the view, which for the dining,
+// professor and calendar tabs means no second network round-trip.
+//
+// The nodes are held, NOT serialized: caching an innerHTML string would
+// re-parse the markup on restore and silently drop every addEventListener the
+// view attached (dining hall/day pills, calendar month grid, WebCat inputs).
+// Detaching and re-attaching the same nodes preserves those listeners, which
+// also means per-tab UI state (selected hall, open month, typed CRNs) sticks
+// the way a user expects. A full page reload re-renders from scratch, since
+// that is also when the underlying data may have changed.
+const toolHosts = new Map(); // tool -> the element that holds that tab's DOM
+
 function renderTool() {
     const modal = document.getElementById('campus-tools-modal');
     const body = document.getElementById('campus-tools-body');
@@ -64,26 +83,42 @@ function renderTool() {
       btn.classList.toggle('active', btn.getAttribute('data-tool') === activeTool);
     });
 
-    body.innerHTML = '';
-    if (activeTool === 'food') {
-      renderDiningView(body);
-    } else if (activeTool === 'rmp') {
-      renderRmpView(body, getHiddenCourses());
-    } else if (activeTool === 'buildings') {
-      renderBuildingHoursView(body);
-    } else if (activeTool === 'bus') {
-      renderBusView(body);
-    } else if (activeTool === 'events') {
-      renderEventsView(body);
-    } else if (activeTool === 'notifications') {
-      renderNotificationsView(body);
-    } else if (activeTool === 'export') {
-      renderExportView(body);
-    } else if (activeTool === 'options') {
-      renderOptionsView(body);
-    } else {
-      renderRegistrationView(body);
+    // Already rendered this session? Just put its live DOM back.
+    const host = toolHosts.get(activeTool);
+    if (host) {
+      body.replaceChildren(host);
+      return;
     }
+
+    // Fresh render. Each tab owns a wrapper element that we keep in toolHosts
+    // forever, so switching tabs only moves the wrapper. The wrapper is never
+    // display:none'd while loading — several views measure their own layout,
+// and a hidden ancestor would hand them zero widths.
+    const holder = document.createElement('div');
+    holder.className = 'campus-tools-tool';
+    if (activeTool === 'food') {
+      renderDiningView(holder);
+    } else if (activeTool === 'rmp') {
+      renderRmpView(holder, getHiddenCourses());
+    } else if (activeTool === 'buildings') {
+      renderBuildingHoursView(holder);
+    } else if (activeTool === 'days') {
+      renderDaysOffView(holder);
+    } else if (activeTool === 'notifications') {
+      renderNotificationsView(holder);
+    } else if (activeTool === 'export') {
+      renderExportView(holder);
+    } else if (activeTool === 'options') {
+      renderOptionsView(holder);
+    } else {
+      renderRegistrationView(holder);
+    }
+
+    // Remember the holder BEFORE moving it into the body, so a re-render
+    // triggered from inside the view (the Options tab re-renders itself on a
+    // theme change) still lands in the node we are tracking.
+    toolHosts.set(activeTool, holder);
+    body.replaceChildren(holder);
   }
 
 // The Options tab can switch themes while the modal is open — refresh the CSS
@@ -115,8 +150,7 @@ export function openCampusToolsModal(tool) {
       <button type="button" class="campus-tools-tab" data-tool="rmp" role="tab">🧑‍🏫 Professors</button>
       <button type="button" class="campus-tools-tab" data-tool="registration" role="tab">🎓 WebCat Reg</button>
       <button type="button" class="campus-tools-tab" data-tool="buildings" role="tab">🏢 Hours</button>
-      <button type="button" class="campus-tools-tab" data-tool="bus" role="tab">🚌 Bus</button>
-      <button type="button" class="campus-tools-tab" data-tool="events" role="tab">🗓️ Events</button>
+      <button type="button" class="campus-tools-tab" data-tool="days" role="tab">🌴 Days Off</button>
       <button type="button" class="campus-tools-tab" data-tool="notifications" role="tab">🔔 Alerts</button>
       <button type="button" class="campus-tools-tab" data-tool="export" role="tab">📅 Export</button>
       <button type="button" class="campus-tools-tab" data-tool="options" role="tab">⚙️ Options</button>

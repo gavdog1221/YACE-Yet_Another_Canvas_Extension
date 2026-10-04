@@ -10,7 +10,7 @@ import {
   STORAGE_KEY_WHATIF,
   STORAGE_KEY_DOM_COLORS,
   STORAGE_KEY_OPTIONS,
-  STORAGE_KEY_EVENTS_CACHE,
+  STORAGE_KEY_CALENDAR_CACHE,
 } from './constants.js';
 
 export const state = {
@@ -81,8 +81,11 @@ export const state = {
   // Hydrated from STORAGE_KEY_OPTIONS below; options.js owns the write path.
   options: {},
 
-  // --- Campus events (MUB + UNH Today) in-memory mirror of the cache ---
-  eventsCache: null, // { date, mub, unhtoday } persisted under STORAGE_KEY_EVENTS_CACHE
+  // --- UNH academic calendar (days off) ---
+  // { source: 'live'|'stale'|'snapshot', fetchedAt, calName, days: [...] }
+  // persisted under STORAGE_KEY_CALENDAR_CACHE. The day list itself is the
+  // parsed ICS (one entry per covered day), owned by services/calendar-api.js.
+  calendarCache: null,
 };
 
 try {
@@ -104,7 +107,7 @@ try {
 }
 
 try {
-  state.eventsCache = JSON.parse(localStorage.getItem(STORAGE_KEY_EVENTS_CACHE) || 'null');
+  state.calendarCache = JSON.parse(localStorage.getItem(STORAGE_KEY_CALENDAR_CACHE) || 'null');
 } catch {
-  state.eventsCache = null;
+  state.calendarCache = null;
 }

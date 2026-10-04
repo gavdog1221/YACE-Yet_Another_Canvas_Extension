@@ -14,11 +14,9 @@
     "*://foodpro.unh.edu/*",
     "https://www.unh.edu/*",
     "https://unh.edu/*",
-    "https://campusrec.unh.edu/*",
-    "https://library.unh.edu/*",
-    "https://librarycalendars.unh.edu/*",
     "https://courses.unh.edu/*",
     "https://webcat.unh.edu/*",
+    "https://25livepub.collegenet.com/*",
     "storage",
     "cookies",
     "webRequest",
@@ -57,6 +55,7 @@
         "css/view-dining.css",
         "css/view-schedule.css",
         "css/view-kanban.css",
+        "css/view-days-off.css",
         "css/fullscreen.css"
       ],
       "run_at": "document_start"

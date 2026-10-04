@@ -25,13 +25,14 @@ export const STORAGE_KEY_GRADE_SNAPSHOT = 'canvas_mod_tasks_grade_snapshot_v1';
 export const STORAGE_KEY_WHATS_NEW = 'canvas_mod_tasks_whats_new_v1';
 export const STORAGE_KEY_NOTIFICATION_HISTORY = 'canvas_mod_tasks_notifications_v1';
 export const STORAGE_KEY_OPTIONS = 'canvas_mod_tasks_options_v1';
-export const STORAGE_KEY_EVENTS_CACHE = 'canvas_mod_tasks_events_cache_v1';
+
 export const STORAGE_KEY_DINING_MENUS = 'canvas_mod_tasks_dining_menus_v1';
 export const STORAGE_KEY_ANNOUNCEMENTS_CACHE_TIME = 'canvas_mod_tasks_announcements_cache_time_v1';
 export const STORAGE_KEY_SCHEDULE_CACHE = 'canvas_mod_tasks_schedule_cache_v1';
 export const STORAGE_KEY_DASHBOARD_PANELS = 'canvas_mod_tasks_dashboard_panels_v1';
 export const STORAGE_KEY_DASHBOARD_PANEL_ORDER = 'canvas_mod_tasks_dashboard_panel_order_v1';
 export const STORAGE_KEY_NOTES = 'canvas_mod_tasks_notes_v1';
+export const STORAGE_KEY_CALENDAR_CACHE = 'canvas_mod_tasks_calendar_cache_v1';
 
 // Sticky-note accent hues (hex) shown as color dots on each note; the first
 // one repeats the popover's overall accent so new notes blend in.

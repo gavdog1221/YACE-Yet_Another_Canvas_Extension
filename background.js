@@ -1,6 +1,10 @@
 const RMP_GRAPHQL_URL = 'https://www.ratemyprofessors.com/graphql';
 // University of New Hampshire (all campuses) — RMP global ID (legacyId 1231).
 const RMP_SCHOOL_ID = 'U2Nob29sLTEyMzE=';
+// UNH Academic Core Calendar, published by the Registrar on their 25Live/Trumba
+// host as a static iCalendar feed (holidays, breaks, exam blocks, schedule
+// changes, weather/closure notices).
+const UNH_ACADEMIC_CALENDAR_ICS = 'https://25livepub.collegenet.com/calendars/unh-academic-core-calendar.ics';
 
 // --- WebCat CRN lookup (term codes only) ---
 // Courses are resolved through the *public* UNH course catalog
@@ -721,60 +725,30 @@ browser.runtime.onMessage.addListener((request) => {
         })();
     }
 
-    if (request.type === 'FETCH_EVENTS') {
+    if (request.type === 'FETCH_UNH_CALENDAR') {
+        // UNH's official academic calendar as an iCalendar feed. The registrar
+        // page (www.unh.edu/registrar/calendar) embeds it as a 25Live/Trumba
+        // "spud" that is rendered client-side, but the same calendar is
+        // published as a static text/calendar feed — every entry is an all-day
+        // VEVENT with SUMMARY/DTSTART/DTEND, so the content side can read the
+        // raw ICS instead of scraping a JS widget. This is also where the
+        // registrar posts holidays, breaks, reading days, schedule changes
+        // and any weather/closure notice, so it is the live source for "days
+        // off" (see services/calendar-api.js).
         return (async () => {
-            // What's-happening-on-campus: two unh.edu Drupal homepages fetched
-            // in parallel (same origin the dashboard can't CORS on its own).
-            // unhis athletics is not included — the calendar on unwildcats.com
-            // migrated to a client-side SPA with no server-rendered events.
-            const grab = async (url) => {
-                try {
-                    const res = await fetch(url, { credentials: 'omit' });
-                    if (!res.ok) return null;
-                    return await res.text();
-                } catch (e) {
-                    return null;
+            try {
+                const res = await fetch(UNH_ACADEMIC_CALENDAR_ICS, { credentials: 'omit' });
+                if (!res.ok) return { success: false, error: 'UNH calendar feed returned HTTP ' + res.status };
+                const ics = await res.text();
+                // Guard against an HTML error page / interstitial served with a
+                // 200 — the parser needs real VEVENT blocks.
+                if (!ics.includes('BEGIN:VEVENT')) {
+                    return { success: false, error: 'UNH calendar feed did not return an iCalendar document.' };
                 }
-            };
-            const [mubHtml, unhtodayHtml] = await Promise.all([
-                grab('https://www.unh.edu/mub/events'),
-                grab('https://www.unh.edu/unhtoday/'),
-            ]);
-            if (!mubHtml && !unhtodayHtml) {
-                return { success: false, error: 'Could not reach the campus event pages.' };
+                return { success: true, ics };
+            } catch (e) {
+                return { success: false, error: String((e && e.message) || e) };
             }
-            return { success: true, mubHtml, unhtodayHtml };
-        })();
-    }
-
-    if (request.type === 'FETCH_BUILDING_HOURS') {
-        return (async () => {
-            // Building hours live on three different UNH sites, and every one
-            // hides its real schedule behind a collapsible/dropdown affordance:
-            // - unh.edu/mub/... renders each section as a bootstrap accordion
-            //   (hours only appear inside the collapsed .collapse bodies)
-            // - campusrec.unh.edu/hours tucks the Hamel hours into a paragraph
-            // - library.unh.edu serves hours through a LibCal JSON widget on
-            //   librarycalendars.unh.edu (weeks of per-location day rows)
-            // Grab all three in parallel; local parsing handles the rest.
-            const grab = async (url) => {
-                try {
-                    const res = await fetch(url, { credentials: 'omit' });
-                    if (!res.ok) return null;
-                    return await res.text();
-                } catch (e) {
-                    return null;
-                }
-            };
-            const [mubHtml, recHtml, libraryJson] = await Promise.all([
-                grab('https://unh.edu/mub/about/mub-building-hours'),
-                grab('https://campusrec.unh.edu/hours'),
-                grab('https://librarycalendars.unh.edu/widget/hours/grid?iid=3647&lid=0&format=json'),
-            ]);
-            if (!mubHtml && !recHtml && !libraryJson) {
-                return { success: false, error: 'Could not reach the building hours pages.' };
-            }
-            return { success: true, mubHtml, recHtml, libraryJson };
         })();
     }
 

@@ -1,22 +1,18 @@
-import { computeBuildingStatus, fetchBuildingHours } from '../services/building-hours-api.js';
+import { computeBuildingStatus, openHours } from '../services/building-hours-static.js';
 import { escapeHTML } from '../utils/text.js';
 
 // Campus & Tools "Hours" tab — building cards (MUB, Hamel Rec, Dimond Library,
 // Kingsbury Library).
-// Each card lists every section scraped from the source page (accordion bodies
-// and dashboard dropdowns included), highlights today's row, and links out to
-// the live source since hours shift for breaks and holidays.
+//
+// The schedule is bundled (services/building-hours-static.js) rather than
+// scraped, so this tab renders synchronously with no network calls at all.
+// Each card still links out to the live source, since UNH posts separate
+// schedules for finals week, winter break and holidays.
 
-export async function renderBuildingHoursView(listContainer) {
+export function renderBuildingHoursView(listContainer) {
     if (!listContainer) return;
 
-    listContainer.innerHTML = '<div class="bh-loading">Fetching building hours…</div>';
-
-    const data = await fetchBuildingHours();
-    if (!data || !Array.isArray(data.buildings) || !data.buildings.length) {
-      listContainer.innerHTML = '<div class="bh-error">Couldn\u2019t load building hours right now. Check your connection and try the source pages directly.</div>';
-      return;
-    }
+    const buildings = openHours();
 
     listContainer.innerHTML = `
       <div class="bh-tab-scroll">
@@ -25,7 +21,7 @@ export async function renderBuildingHoursView(listContainer) {
       <span class="bh-sub">Campus buildings and the services inside them — hours shift for breaks, so each card links to the live source.</span>
       </div>
       <div class="bh-grid">
-      ${data.buildings.map(renderBuildingCard).join('')}
+      ${buildings.map(renderBuildingCard).join('')}
       </div>
       </div>`;
   }

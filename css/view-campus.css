@@ -1,4 +1,4 @@
-/* Campus & Tools — Bus / Events / Export / Options tabs.
+/* Campus & Tools — Export / Options tabs.
    Self-scrolling region pattern matches the dining (dining-menu-body) and
    professor ratings (rmp-tab-scroll) tabs: the shared .campus-tools-body
    stays overflow:visible so floating overlays escape; each view wraps its
@@ -7,8 +7,6 @@
 
 /* ---- shared scaffolding ---- */
 .campus-tools-body .bh-tab-scroll,
-.campus-tools-body .bus-tab-scroll,
-.campus-tools-body .ev-tab-scroll,
 .campus-tools-body .exp-tab-scroll,
 .campus-tools-body .opt-tab-scroll {
   flex: 1 1 auto !important;
@@ -20,114 +18,24 @@
   padding-right: 4px !important;
 }
 .campus-tools-body .bh-tab-scroll::-webkit-scrollbar,
-.campus-tools-body .bus-tab-scroll::-webkit-scrollbar,
-.campus-tools-body .ev-tab-scroll::-webkit-scrollbar,
 .campus-tools-body .exp-tab-scroll::-webkit-scrollbar,
 .campus-tools-body .opt-tab-scroll::-webkit-scrollbar { width: 6px !important; }
 .campus-tools-body .bh-tab-scroll::-webkit-scrollbar-track,
-.campus-tools-body .bus-tab-scroll::-webkit-scrollbar-track,
-.campus-tools-body .ev-tab-scroll::-webkit-scrollbar-track,
 .campus-tools-body .exp-tab-scroll::-webkit-scrollbar-track,
 .campus-tools-body .opt-tab-scroll::-webkit-scrollbar-track { background: transparent !important; }
 .campus-tools-body .bh-tab-scroll::-webkit-scrollbar-thumb,
-.campus-tools-body .bus-tab-scroll::-webkit-scrollbar-thumb,
-.campus-tools-body .ev-tab-scroll::-webkit-scrollbar-thumb,
 .campus-tools-body .exp-tab-scroll::-webkit-scrollbar-thumb,
 .campus-tools-body .opt-tab-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px !important; }
 
-.bus-view-header, .ev-view-header, .exp-view-header, .opt-view-header {
+.exp-view-header, .opt-view-header {
   display: flex !important;
   flex-direction: column !important;
   gap: 3px !important;
   flex: 0 0 auto !important;
   min-width: 0 !important;
 }
-.bus-view-title, .ev-title, .exp-title, .opt-title { color: var(--text-primary) !important; font-weight: 800 !important; font-size: 13.5px !important; }
-.bus-view-note, .ev-sub, .exp-sub, .opt-sub { font-size: 11px !important; color: var(--text-secondary) !important; font-weight: 500 !important; }
-
-/* ---- Bus: route pills ---- */
-.bus-route-pills { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; flex: 0 0 auto !important; }
-.bus-pill {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  padding: 5px 11px !important;
-  border-radius: 999px !important;
-  border: 1px solid var(--border-subtle) !important;
-  background: var(--glass-obsidian) !important;
-  color: var(--text-secondary) !important;
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-.bus-pill:hover { color: var(--text-primary) !important; }
-.bus-pill.active { background: var(--accent-soft) !important; color: var(--primary-accent) !important; border-color: var(--primary-accent) !important; box-shadow: 0 0 10px var(--accent-glow) !important; }
-.bus-pill-area { font-size: 9px !important; font-weight: 600 !important; opacity: 0.75 !important; }
-
-/* ---- Bus: controls + departures ---- */
-.bus-controls { display: flex !important; align-items: flex-end !important; flex-wrap: wrap !important; gap: 10px !important; flex: 0 0 auto !important; }
-.bus-dir-toggle { display: inline-flex !important; background: rgba(0, 0, 0, 0.22) !important; border: 1px solid var(--border-subtle) !important; border-radius: 999px !important; padding: 3px !important; gap: 2px !important; }
-.bus-dir-btn { border: none !important; background: transparent !important; color: var(--text-secondary) !important; font-size: 11px !important; font-weight: 700 !important; padding: 4px 12px !important; border-radius: 999px !important; cursor: pointer !important; transition: all 0.15s ease !important; }
-.bus-dir-btn.active { background: var(--primary-accent) !important; color: #fff !important; box-shadow: 0 2px 10px var(--accent-glow) !important; }
-.bus-stop-label { font-size: 10px !important; font-weight: 700 !important; color: var(--text-tertiary) !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; }
-.bus-stop-select {
-  background: var(--glass-obsidian) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-subtle) !important;
-  border-radius: 10px !important;
-  font-size: 12px !important;
-  padding: 6px 10px !important;
-  max-width: 280px !important;
-  min-height: 0 !important;
-}
-.bus-sched-note { font-size: 11px !important; color: var(--text-tertiary) !important; }
-.bus-departures { display: flex !important; flex-direction: column !important; gap: 8px !important; flex: 1 1 auto !important; }
-.bus-dep-head { font-size: 12px !important; color: var(--text-primary) !important; font-weight: 700 !important; }
-.bus-dep-list { display: flex !important; flex-direction: column !important; gap: 6px !important; }
-.bus-dep-row { display: flex !important; align-items: center !important; gap: 10px !important; padding: 8px 12px !important; background: linear-gradient(180deg, var(--glass-obsidian), var(--glass-obsidian-2)) !important; border: 1px solid var(--border-subtle) !important; border-radius: 12px !important; }
-.bus-dep-row.is-soon { border-color: var(--primary-accent) !important; box-shadow: 0 0 12px var(--accent-glow) !important; }
-.bus-dep-time { font-size: 14px !important; font-weight: 800 !important; color: var(--text-primary) !important; font-variant-numeric: tabular-nums !important; min-width: 74px !important; }
-.bus-dep-dir { font-size: 11px !important; color: var(--text-secondary) !important; font-weight: 600 !important; }
-.bus-dep-soon { margin-left: auto !important; font-size: 10px !important; font-weight: 800 !important; color: var(--primary-accent) !important; }
-.bus-empty { padding: 14px !important; font-size: 12.5px !important; color: var(--text-secondary) !important; border: 1px dashed var(--border-subtle) !important; border-radius: 12px !important; }
-.bus-track { margin-top: 2px !important; }
-.bus-foot { font-size: 10.5px !important; color: var(--text-tertiary) !important; flex: 0 0 auto !important; }
-.bus-track a, .connector-track a, .bus-foot a { color: var(--primary-accent) !important; text-decoration: none !important; font-weight: 700 !important; }
-.bus-track a:hover, .connector-track a:hover, .bus-foot a:hover { text-decoration: underline !important; }
-
-/* ---- Bus: Campus Connector cards ---- */
-.connector-intro { font-size: 11.5px !important; color: var(--text-secondary) !important; }
-.connector-grid { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important; gap: 12px !important; align-items: start !important; }
-.connector-card { background: linear-gradient(180deg, var(--glass-obsidian), var(--glass-obsidian-2)) !important; border: 1px solid var(--border-subtle) !important; border-radius: 16px !important; padding: 13px !important; box-shadow: var(--shadow-card) !important; }
-.connector-head { display: flex !important; align-items: flex-start !important; justify-content: space-between !important; gap: 8px !important; }
-.connector-name { font-weight: 800 !important; font-size: 12px !important; color: var(--text-primary) !important; }
-.connector-status { font-size: 9.5px !important; font-weight: 800 !important; padding: 2px 8px !important; border-radius: 99px !important; white-space: nowrap !important; }
-.connector-status.is-open { background: var(--success-soft) !important; color: var(--success) !important; }
-.connector-status.is-later { background: var(--warning-soft) !important; color: var(--warning) !important; }
-.connector-status.is-done, .connector-status.is-none { background: var(--glass-obsidian) !important; color: var(--text-tertiary) !important; border: 1px solid var(--border-subtle) !important; }
-.connector-when { margin-top: 9px !important; display: flex !important; flex-direction: column !important; gap: 3px !important; }
-.connector-when-row { display: flex !important; justify-content: space-between !important; align-items: baseline !important; gap: 8px !important; font-size: 10.5px !important; }
-.connector-days { color: var(--text-secondary) !important; font-weight: 700 !important; }
-.connector-hours { color: var(--text-primary) !important; font-variant-numeric: tabular-nums !important; }
-.connector-freq { margin-top: 7px !important; font-size: 10.5px !important; font-weight: 700 !important; color: var(--primary-accent) !important; }
-.connector-note { margin-top: 6px !important; font-size: 10px !important; color: var(--text-tertiary) !important; }
-
-/* ---- Events ---- */
-.ev-section { display: flex !important; flex-direction: column !important; gap: 8px !important; }
-.ev-section-title { margin: 0 !important; font-size: 12px !important; font-weight: 800 !important; color: var(--text-primary) !important; }
-.ev-loading { padding: 18px 4px !important; font-size: 12.5px !important; color: var(--text-secondary) !important; }
-.ev-empty { font-size: 12px !important; color: var(--text-tertiary) !important; padding: 6px 2px !important; }
-.ev-mub-grid { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)) !important; gap: 10px !important; }
-.ev-card { display: flex !important; flex-direction: column !important; gap: 5px !important; padding: 12px !important; background: linear-gradient(180deg, var(--glass-obsidian), var(--glass-obsidian-2)) !important; border: 1px solid var(--border-subtle) !important; border-radius: 14px !important; text-decoration: none !important; box-shadow: var(--shadow-card) !important; transition: transform 0.15s ease, border-color 0.15s ease !important; }
-.ev-card:hover { transform: translateY(-1px) !important; border-color: var(--primary-accent) !important; }
-.ev-card-title { font-weight: 800 !important; font-size: 12.5px !important; color: var(--text-primary) !important; }
-.ev-card-desc { font-size: 10.5px !important; color: var(--text-secondary) !important; line-height: 1.45 !important; }
-.ev-card-go { font-size: 10px !important; font-weight: 800 !important; color: var(--primary-accent) !important; margin-top: 2px !important; }
-.ev-stories { list-style: none !important; margin: 0 !important; padding: 0 !important; display: flex !important; flex-direction: column !important; gap: 6px !important; }
-.ev-story-link { display: block !important; padding: 9px 12px !important; background: var(--glass-obsidian) !important; border: 1px solid var(--border-subtle) !important; border-radius: 10px !important; text-decoration: none !important; font-size: 12px !important; font-weight: 600 !important; color: var(--text-primary) !important; transition: border-color 0.15s ease !important; }
-.ev-story-link:hover { border-color: var(--primary-accent) !important; }
-.ev-fineprint { font-size: 10.5px !important; color: var(--text-tertiary) !important; line-height: 1.5 !important; }
+.exp-title, .opt-title { color: var(--text-primary) !important; font-weight: 800 !important; font-size: 13.5px !important; }
+.exp-sub, .opt-sub { font-size: 11px !important; color: var(--text-secondary) !important; font-weight: 500 !important; }
 
 /* ---- Export ---- */
 .exp-card { background: linear-gradient(180deg, var(--glass-obsidian), var(--glass-obsidian-2)) !important; border: 1px solid var(--border-subtle) !important; border-radius: 16px !important; padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 12px !important; max-width: 520px !important; box-shadow: var(--shadow-card) !important; }
