@@ -7,7 +7,7 @@
 // (24h TTL, keyed by normalized instructor name) so the 30s view re-render
 // doesn't hammer RMP.
 
-import { STORAGE_KEY_RMP_CACHE } from '../constants.js';
+import { STORAGE_KEY_RMP_CACHE, STORAGE_KEY_RMP_REVIEWS } from '../constants.js';
 
 const RMP_CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -212,8 +212,10 @@ export function professorProfileUrl(teacher) {
     : null;
 }
 
-// Synchronous cache check — lets the Info tab render known ratings instantly
-// (every renderCurrentView re-renders the view every 30s).
+// Synchronous cache check — lets the Ratings tab paint known ratings on its
+// first frame, before the async misses resolve. (The tab itself is rendered
+// once per session and then kept alive by campus-tools-modal's toolHosts map,
+// so this runs a handful of times per page load, not on the 30s poll.)
 export function peekBestTeacher(professorName) {
   const key = normalizeName(professorName);
   if (!key) return null;
@@ -260,9 +262,17 @@ export async function resolveBestTeacher(professorName) {
         if (matched) break;
       }
 
-      const cache = readCache();
-      cache[key] = { fetchedAt: Date.now(), teachers: allTeachers };
-      writeCache(cache);
+      // Only a lookup that actually reached RMP and got an answer is worth
+      // persisting. When EVERY variant failed (`allTeachers` empty) the lookup
+      // tells us nothing — caching that as a 24h entry made peekBestTeacher
+      // report a hit on an empty list, so the card rendered its "loading"
+      // placeholder forever instead of its "not found" state. Leave the
+      // negative cache to do the rate-limiting instead.
+      if (allTeachers.length) {
+        const cache = readCache();
+        cache[key] = { fetchedAt: Date.now(), teachers: allTeachers };
+        writeCache(cache);
+      }
 
       if (!matched) negativeCache.set(key, Date.now());
       return matched;
@@ -274,5 +284,194 @@ export async function resolveBestTeacher(professorName) {
 
   pending.set(key, promise);
   promise.finally(() => pending.delete(key)).catch(() => {});
+  return promise;
+}
+
+/* ---------------------------------------------------------------------------
+ * Written student reviews ("what students actually say")
+ * ---------------------------------------------------------------------------
+ *
+ * Separate from the teacher lookup above on purpose:
+ *
+ *   - Different query. Reviews hang off the Teacher type's `ratings`
+ *     connection and are reached through `node(id:)`, so they need the opaque
+ *     GraphQL `id` rather than legacyId. RMP caps a page at a small number, so
+ *     the rest is cursor paging.
+ *   - Different volume. One lookup is a handful of summary fields; 20 reviews
+ *     are tens of kilobytes of free-text. Nobody wants that fetched for all six
+ *     of their courses when they open the tab, so reviews load ONLY when the
+ *     reader presses "Comments" on a card. The Ratings tab itself stays one
+ *     small request per instructor.
+ *   - Different cache. Summaries go stale in a day; a student's write-up of a
+ *     semester is effectively permanent, so reviews get a week.
+ *
+ * Everything else follows the same three-part contract as the rest of the
+ * extension's fetches: in-flight dedup, a failure backoff, and a freshness
+ * check — otherwise a review panel left open across a RMP hiccup turns into a
+ * request loop.
+ */
+
+const RMP_REVIEWS_TTL = 7 * 24 * 60 * 60 * 1000;
+const RMP_REVIEWS_PAGE = 5;
+
+// Hard ceiling on how much review text we keep per professor. RMP comments run
+// to ~4000 chars, so an uncapped "Load more" would quietly grow the localStorage
+// blob toward the 5MB quota, at which point every other write in the extension
+// starts failing.
+const MAX_CACHED_REVIEWS = 20;
+
+// In-flight review pages, keyed `nodeId::cursor`.
+const pendingReviews = new Map();
+
+// Failed review fetches, keyed the same way — a downed RMP must not be retried
+// on every click of the Comments button.
+const reviewsFailedAt = new Map();
+const REVIEWS_RETRY_WINDOW_MS = 2 * 60 * 1000;
+
+// RMP returns comment text as Latin1String, so bodies can carry stray control
+// characters and lone high bytes. Strip anything that isn't printable text
+// before it reaches innerHTML.
+function sanitizeComment(raw) {
+  return String(raw == null ? '' : raw)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function readReviewsCache() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY_RMP_REVIEWS) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+// Drop expired entries, then anything over quota, oldest-fetched first. Called
+// before every write so the blob can't creep past the cap.
+function pruneReviewsCache(cache) {
+  const now = Date.now();
+  let kept = {};
+  Object.keys(cache).forEach(k => {
+    const entry = cache[k];
+    if (entry && now - (entry.fetchedAt || 0) < RMP_REVIEWS_TTL) kept[k] = entry;
+  });
+  const keys = Object.keys(kept).sort((a, b) => (kept[a].fetchedAt || 0) - (kept[b].fetchedAt || 0));
+  while (keys.length > 24) delete kept[keys.shift()];
+  return kept;
+}
+
+function writeReviewsCache(cache) {
+  try {
+    localStorage.setItem(STORAGE_KEY_RMP_REVIEWS, JSON.stringify(pruneReviewsCache(cache)));
+  } catch (e) {
+    // Quota / private mode. Reviews are a nice-to-have; never let this throw.
+  }
+}
+
+// Everything already cached for this teacher, or null. The view calls this
+// synchronously on click so the panel can paint instantly with no spinner for
+// anything we've seen before.
+export function peekProfessorReviews(teacher) {
+  const id = teacher && teacher.legacyId;
+  if (!id) return null;
+  const entry = readReviewsCache()[`r${id}`];
+  if (!entry || !Array.isArray(entry.reviews) || Date.now() - (entry.fetchedAt || 0) > RMP_REVIEWS_TTL) {
+    return null;
+  }
+  return entry;
+}
+
+function normalizeReview(node) {
+  if (!node) return null;
+  const comment = sanitizeComment(node.comment);
+  if (!comment) return null;
+  return {
+    id: node.id != null ? String(node.id) : null,
+    date: node.date || null,
+    comment,
+    // qualityRating is the per-review 1-5 score (Rating has no `rating` field).
+    quality: typeof node.qualityRating === 'number' ? node.qualityRating : null,
+    difficulty: typeof node.difficultyRatingRounded === 'number' ? node.difficultyRatingRounded : null,
+    grade: node.grade || null,
+    courseType: typeof node.courseType === 'number' ? node.courseType : null,
+    tags: String(node.ratingTags || '').split('--').map(s => s.trim()).filter(Boolean).slice(0, 5),
+  };
+}
+
+/**
+ * Load one page of reviews. `opts.after` is the cursor from a previous page;
+ * omit it for the first page. Resolves to
+ * { reviews, endCursor, hasNextPage } or null when the fetch failed.
+ *
+ * Callers should pass the result of peekProfessorReviews() so already-cached
+ * pages never touch the network.
+ */
+export async function fetchProfessorReviews(teacher, opts) {
+  const o = opts || {};
+  const id = teacher && teacher.legacyId;
+  const nodeId = teacher && teacher.id;
+  if (!nodeId) return null;
+
+  const after = o.after ? String(o.after) : '';
+  const key = `${nodeId}::${after}`;
+
+  if (!o.force) {
+    const at = reviewsFailedAt.get(key);
+    if (at != null && Date.now() - at < REVIEWS_RETRY_WINDOW_MS) return null;
+    if (pendingReviews.has(key)) return pendingReviews.get(key);
+  }
+
+  const promise = (async () => {
+    try {
+      const resp = await browser.runtime.sendMessage({
+        type: 'FETCH_RMP_REVIEWS',
+        nodeId,
+        after: after || null,
+        first: RMP_REVIEWS_PAGE,
+      });
+      if (!resp || !resp.success) {
+        reviewsFailedAt.set(key, Date.now());
+        return null;
+      }
+      reviewsFailedAt.delete(key);
+
+      const page = (resp.reviews || []).map(normalizeReview).filter(Boolean);
+      const payload = {
+        reviews: page,
+        endCursor: resp.endCursor || null,
+        hasNextPage: !!resp.hasNextPage,
+      };
+
+      // Accumulate into the per-teacher cache entry so a reload can resume
+      // paging without refetching, and cap the stored text.
+      const cache = pruneReviewsCache(readReviewsCache());
+      const entryKey = `r${id}`;
+      const priorEntry = cache[entryKey];
+      const prior = priorEntry && Array.isArray(priorEntry.reviews) ? priorEntry.reviews : [];
+      const seen = new Set(prior.map(r => r && r.id).filter(Boolean));
+      const merged = prior.concat(page.filter(r => !r.id || !seen.has(r.id)));
+      cache[entryKey] = {
+        fetchedAt: Date.now(),
+        reviews: merged.slice(0, MAX_CACHED_REVIEWS),
+        cursor: payload.endCursor,
+        hasNextPage: payload.hasNextPage,
+      };
+      writeReviewsCache(cache);
+
+      return payload;
+    } catch (e) {
+      console.warn('[RMP] reviews fetch failed for', teacher && teacher.firstName, e);
+      reviewsFailedAt.set(key, Date.now());
+      return null;
+    }
+  })();
+
+  if (o.force) return promise;
+  pendingReviews.set(key, promise);
+  promise.catch(() => {}).finally(() => pendingReviews.delete(key));
   return promise;
 }

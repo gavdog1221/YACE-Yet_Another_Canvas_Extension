@@ -26,16 +26,30 @@ export function setTaskCompleted(taskId, isDone) {
     localStorage.setItem(STORAGE_KEY_DONE, JSON.stringify(data));
   }
 
+// Batch form used by the scanners. Calling setTaskCompleted per task meant one
+// full JSON.stringify + localStorage.setItem for EVERY already-submitted task
+// in the course map — and each stringify re-serialized a map that kept growing,
+// so a heavy term (~500 tasks) turned a single pass into thousands of key
+// writes and blocked the main thread on each one. Mutate the memoized map in
+// place and flush once.
 export function autoCompleteSubmittedTasks(courseMap) {
     const completedMap = getCompletedTasks();
+    const now = Date.now();
     let changed = false;
     Object.values(courseMap).forEach(course => {
       (course.tasks || []).forEach(t => {
         if (t.id && t.isSubmitted && !completedMap[t.id]) {
-          setTaskCompleted(t.id, true);
+          completedMap[t.id] = now;
           changed = true;
         }
       });
     });
+    if (changed) {
+      try {
+        localStorage.setItem(STORAGE_KEY_DONE, JSON.stringify(completedMap));
+      } catch (e) {
+        console.warn('[YACE] completed-tasks write failed:', e);
+      }
+    }
     return changed;
   }

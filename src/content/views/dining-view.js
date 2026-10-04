@@ -75,6 +75,15 @@ export async function renderDiningView(listContainer) {
     let activeData = null;
     let activeDate = null;
 
+    // Generation token guarding every `await ensureDiningMenusForDate(...)`
+    // below. FoodPro is slow, so requests for different days land out of
+    // order: click "Tomorrow" (cold, ~2s) then "Today" (cached, instant) and
+    // without this the Today paint would be immediately overwritten by the
+    // late Tomorrow response — leaving tomorrow's menu under a highlighted
+    // "Today" pill. Each selection bumps the counter and captures it; a
+    // response whose counter is stale is dropped instead of painted.
+    let renderSeq = 0;
+
     function dateForOffset(offset) {
       const d = new Date();
       d.setDate(d.getDate() + offset); // 0 = today, 1 = tomorrow
@@ -125,7 +134,13 @@ export async function renderDiningView(listContainer) {
         if (retryBtn) {
           retryBtn.addEventListener('click', async () => {
             retryBtn.textContent = 'Retrying…';
+            // Same generation guard as the day pills: a forced refetch is the
+            // slowest request this view makes, so it is the most likely to land
+            // after the user has already switched to another day.
+            const seq = ++renderSeq;
             const fresh = await ensureDiningMenusForDate(dateObj, { force: true });
+            if (seq !== renderSeq) return;
+            activeData = fresh;
             renderActiveHall(fresh, dateObj);
           });
         }
@@ -347,11 +362,14 @@ export async function renderDiningView(listContainer) {
         pill.classList.add('active');
         state.activeDiningDayOffset = parseInt(pill.getAttribute('data-dayoffset'), 10);
         state.activeStationFilter = '__DEFAULT__';
+        const seq = ++renderSeq;
         activeDate = dateForOffset(state.activeDiningDayOffset);
         if (!state.diningByDateCache[activeDate.toDateString()]) {
           renderDayLoading(activeDate);
         }
-        activeData = await ensureDiningMenusForDate(activeDate);
+        const data = await ensureDiningMenusForDate(activeDate);
+        if (seq !== renderSeq) return; // a newer day was picked — drop this
+        activeData = data;
         renderActiveHall(activeData, activeDate);
       });
     });
@@ -363,7 +381,10 @@ export async function renderDiningView(listContainer) {
     ensureDiningMenusForDate(dateForOffset(0)).catch(() => {});
     ensureDiningMenusForDate(dateForOffset(1)).catch(() => {});
 
+    const seq = ++renderSeq;
     activeDate = dateForOffset(state.activeDiningDayOffset);
-    activeData = await ensureDiningMenusForDate(activeDate);
+    const data = await ensureDiningMenusForDate(activeDate);
+    if (seq !== renderSeq) return; // user already clicked another day
+    activeData = data;
     renderActiveHall(activeData, activeDate);
   }

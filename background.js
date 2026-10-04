@@ -297,6 +297,33 @@ const RMP_TEACHER_QUERY = `query TeacherSearch($query: TeacherSearchQuery!, $fir
   }
 }`;
 
+// Written student reviews for one teacher, paged 5 at a time.
+//
+// Two schema details that cost a round-trip to discover:
+//   - the Teacher type has no `teacher(id:)` root query; you reach a single
+//     teacher through the `node(id:)` interface with an inline `... on Teacher`
+//     fragment, keyed by the opaque base64 `id` (VGVhY2hlci0…) that the search
+//     query above already returns — NOT by legacyId.
+//   - RatingConnection exposes only `edges` + `pageInfo` (no totalCount), and
+//     Rating has no `rating` scalar; the per-review score is `qualityRating`
+//     (1-5) alongside `difficultyRatingRounded`.
+// `sortBy: "helpful"` is the site's own default ordering, so the first page is
+// the reviews RMP itself considers most useful.
+const RMP_REVIEWS_QUERY = `query TeacherReviews($id: ID!, $first: Int, $after: String) {
+  node(id: $id) {
+    ... on Teacher {
+      ratings(first: $first, after: $after, sortBy: "helpful") {
+        pageInfo { hasNextPage endCursor }
+        edges { node {
+          id legacyId date qualityRating difficultyRatingRounded
+          grade class courseType ratingTags thumbsUpTotal iWouldTakeAgain
+          comment
+        } }
+      }
+    }
+  }
+}`;
+
 // --- Canvas file byte chase (FETCH_FILE) ---
 // The dashboard's content script cannot follow Canvas's file-download
 // redirects to the cross-origin file CDN (CORS blocks credentialed fetches in
@@ -637,6 +664,47 @@ browser.runtime.onMessage.addListener((request) => {
                 const json = await res.json();
                 const edges = (((json.data || {}).newSearch || {}).teachers || {}).edges || [];
                 return { success: true, teachers: edges.map(e => e.node) };
+            } catch (e) {
+                return { success: false, error: String((e && e.message) || e) };
+            }
+        })();
+    }
+
+    if (request.type === 'FETCH_RMP_REVIEWS') {
+        return (async () => {
+            const nodeId = String(request.nodeId || '');
+            if (!nodeId) return { success: false, error: 'Missing teacher id.' };
+            // Cursors are opaque strings RMP hands back; `after` must be either a
+            // valid cursor or omitted entirely (passing "" is rejected).
+            const after = request.after ? String(request.after) : null;
+            const first = Math.max(1, Math.min(20, parseInt(request.first, 10) || 5));
+            try {
+                const res = await fetch(RMP_GRAPHQL_URL, {
+                    method: 'POST',
+                    credentials: 'omit',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic dGVzdDp0ZXN0',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        query: RMP_REVIEWS_QUERY,
+                        variables: { id: nodeId, first, after }
+                    })
+                });
+                if (!res.ok) return { success: false, error: `Rate My Professor returned HTTP ${res.status}` };
+                const json = await res.json();
+                if (json.errors && json.errors.length) {
+                    return { success: false, error: String(json.errors[0].message || 'GraphQL error') };
+                }
+                const conn = (((json.data || {}).node || {}).ratings) || {};
+                const edges = conn.edges || [];
+                return {
+                    success: true,
+                    hasNextPage: !!(conn.pageInfo && conn.pageInfo.hasNextPage),
+                    endCursor: (conn.pageInfo && conn.pageInfo.endCursor) || null,
+                    reviews: edges.map(e => e && e.node).filter(Boolean),
+                };
             } catch (e) {
                 return { success: false, error: String((e && e.message) || e) };
             }

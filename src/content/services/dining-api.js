@@ -186,7 +186,11 @@ export async function getDiningHallStatus(hallNum, meals) {
 
       const curMinutes = now.getHours() * 60 + now.getMinutes();
 
-      if (live.openMin && live.closeMin) {
+      // `!= null`, not a truthiness test: parseMinutesFromTimeString('12:00 am')
+      // legitimately returns 0, so a hall that opens or closes at midnight was
+      // being treated as "no live hours" and silently dropped through to the
+      // hardcoded 7:15 AM - 9:00 PM guess below.
+      if (live.openMin != null && live.closeMin != null) {
         const openStr = live.openStr.toUpperCase();
         const closeStr = live.closeStr.toUpperCase();
 
@@ -288,9 +292,12 @@ export async function ensureTodaysDiningMenus() {
     return ensureDiningMenusForDate(new Date());
   }
 
-// Failed days are kept for one retry window so the 30s re-render doesn't
-// hammer a down FoodPro; after it elapses (or on an explicit retry) the next
-// call refetches, so menus recover without reloading the page.
+// Failed days are kept for one retry window so repeated interaction with a
+// down FoodPro doesn't hammer it on every click; after it elapses (or on an
+// explicit retry) the next call refetches, so menus recover without reloading
+// the page. The window is short because the tab now renders once per session
+// and is then kept alive by campus-tools-modal's toolHosts map — the click that
+// follows a failure is the thing being rate-limited here.
 const DINING_RETRY_WINDOW_MS = 60 * 1000;
 const diningFetchFailedAt = {}; // key -> timestamp of the last failed attempt
 

@@ -42,6 +42,12 @@ Adding a new entrypoint requires editing **both** `build.mjs` and the `content_s
   `canvas_mod_tasks_cache_payload_v7`). Changing a stored shape requires bumping the version suffix
   or stale caches break the UI. Task cache is refreshed on a 15-minute freshness window
   (`widget-shell.js`).
+- **`STORAGE_KEY_CACHE_TIME` must be stamped on every scan, success or failure.** The 30s poll
+  gates its background rescan on it, and `saveLocalCache` sits at the very END of `loadTasks`, so
+  a scan that throws partway through used to leave the clock stale and the poll would relaunch a
+  full ~50-200 request scrape every 30s. `loadTasks` now stamps it in a `finally` via
+  `touchLocalCacheTime()` (`storage/caches.js`). Any new code that can throw before that point
+  keeps the `finally` honest — don't remove it.
 - **Cross-origin state uses `browser.storage.local`**, not `localStorage` (per-origin). See
   `src/shared/registration-storage.js` — read from the dashboard bundle, written by the WebCat
   bundle on a different origin. This module is deliberately dependency-free.
@@ -63,6 +69,12 @@ Adding a new entrypoint requires editing **both** `build.mjs` and the `content_s
   revisiting a tab in the same session replays DOM instead of re-fetching. Adding a new tool means
   adding a `data-tool` button + a branch in `renderTool()`; nothing else. The bus-routes and
   "What's Happening on Campus" tabs were removed from this extension.
+- **Every remote fetch needs all three of: in-flight dedup, a failure backoff, and a freshness
+  check.** The established pattern is a module-level `pending<Thing>` promise map (dining, RMP),
+  a `<thing>FetchFailedAt` timestamp checked against a retry window (dining, calendar), and
+  `isFresh()` on the persisted copy. Any new external fetch missing one of these becomes a request
+  loop the moment a second caller appears — which is exactly how the calendar feed ended up
+  re-hitting 25livepub indefinitely once a retry path was reachable.
 - **Building hours are static** (`services/building-hours-static.js`): hardcoded tables, zero I/O.
   When UNH posts a schedule change, edit the table there. `computeBuildingStatus()` still derives
   live open/closed status from the current clock (last matching section wins, so a more specific

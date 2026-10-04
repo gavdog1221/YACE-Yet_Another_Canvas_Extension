@@ -25,9 +25,23 @@ export function loadLocalCache() {
 export function saveLocalCache(courseMap) {
     try {
       localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify(courseMap));
-      localStorage.setItem(STORAGE_KEY_CACHE_TIME, Date.now().toString());
+      touchLocalCacheTime();
     } catch (e) {
       console.warn('Cache write failed:', e);
+    }
+  }
+
+// Advance the "a scan just ran" clock on its own. The widget's 30s poll gates
+// its background rescan on STORAGE_KEY_CACHE_TIME, so this MUST be stamped
+// even when the scan FAILED — otherwise a scan that throws partway through
+// never advances the clock and the poll restarts a full scrape every 30
+// seconds for the rest of the tab's life. Callers pair this with a `finally`
+// (see the end of loadTasks); on success saveLocalCache re-stamps it.
+export function touchLocalCacheTime() {
+    try {
+      localStorage.setItem(STORAGE_KEY_CACHE_TIME, Date.now().toString());
+    } catch (e) {
+      console.warn('Cache timestamp write failed:', e);
     }
   }
 

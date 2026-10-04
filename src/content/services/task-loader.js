@@ -3,7 +3,7 @@ import { origin } from '../constants.js';
 import { hideReloadProgress, showReloadProgress } from '../components/reload-progress.js';
 import { purgeDefaultCanvasElements, updateHiddenMenuButton } from '../components/widget-shell.js';
 import { fetchAllPages, fetchCanvasAnnouncements, fetchCanvasGrades, fetchGradescopeData, getCsrfToken } from '../services/canvas-api.js';
-import { loadLocalAnnouncementsCacheTime, saveCoursePercentagesCache, saveLocalAnnouncementsCache, saveLocalAnnouncementsCacheTime, saveLocalCache, saveLocalGradesCache } from '../storage/caches.js';
+import { loadLocalAnnouncementsCacheTime, saveCoursePercentagesCache, saveLocalAnnouncementsCache, saveLocalAnnouncementsCacheTime, saveLocalCache, saveLocalGradesCache, touchLocalCacheTime } from '../storage/caches.js';
 import { getHiddenCourses } from '../storage/hidden-courses.js';
 import { buildGradeSnapshot, computeGradeChanges, loadGradeSnapshot, saveGradeSnapshot } from '../storage/grade-alerts.js';
 import { autoCompleteSubmittedTasks } from '../storage/completed-tasks.js';
@@ -670,15 +670,26 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
         state.scanStartedAt = 0;
       }
       hideReloadProgress();
-      if (!state.cachedCourseMap || Object.keys(state.cachedCourseMap).length === 0) {
+      if (listContainer && (!state.cachedCourseMap || Object.keys(state.cachedCourseMap).length === 0)) {
         // Keep the dashboard mounted and show a RETRY-able error in the
-        // Assignments panel instead of wiping to a dead-end message.
+        // Assignments panel instead of wiping to a dead-end message. Guarded on
+        // listContainer: this runs in the catch, so a null there would throw a
+        // second error out of the handler and hide the real failure above.
         const assignmentsBody = listContainer.querySelector('.fullscreen-panel.assignments-panel .fullscreen-panel-body');
         const target = assignmentsBody || listContainer;
         target.innerHTML = `<div class="mod-empty-msg" style="color:#f87171; border-color: rgba(248, 113, 113, 0.4);">Error scanning courses.<br><button type="button" class="show-more-tasks-btn" id="yace-rescan-btn">Click to retry</button></div>`;
         const retry = target.querySelector('#yace-rescan-btn');
         if (retry) retry.addEventListener('click', () => loadTasks(true));
       }
+    } finally {
+      // Stamp the "a scan just ran" clock on BOTH the success and failure
+      // paths. The widget's 30s poll gates its background rescan on this
+      // timestamp; without the stamp a scan that throws anywhere above (grade
+      // snapshot, dedup, auto-complete, a render call) would leave the clock
+      // stale and the poll would relaunch a full ~50-200 request scrape every
+      // 30 seconds for as long as the tab is open. saveLocalCache already
+      // stamped it on success — this covers the throw path.
+      touchLocalCacheTime();
     }
   }
 
