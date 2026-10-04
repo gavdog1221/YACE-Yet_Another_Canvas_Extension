@@ -761,6 +761,23 @@ button.doc-preview-btn-top { cursor: pointer !important; line-height: 1.4 !impor
 .cv-module-item-icon { font-size: 14px !important; flex-shrink: 0 !important; }
 .cv-module-item-name { font-weight: 600 !important; color: var(--text-primary) !important; min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
 .cv-module-item-meta { margin-left: auto !important; display: flex !important; gap: 5px !important; flex-shrink: 0 !important; }
+/* 👁 / ⤓ pair on file module items — same affordance as the Upcoming tab's
+   task cards. flex-shrink:0 so the pills are never squeezed out by a long
+   title, and the pills drop the task-card's vertical divider since here they
+   sit at the row's trailing edge rather than mid-row. */
+.cv-module-item-actions { display: flex !important; align-items: center !important; gap: 1px !important; flex-shrink: 0 !important; margin-left: 6px !important; }
+.cv-module-item-actions .doc-view-pill { border-right: 0 !important; padding: 0 7px !important; font-size: 13px !important; border-radius: 6px !important; }
+.cv-module-item-actions .download-pill { padding: 0 7px !important; font-size: 11px !important; border-radius: 6px !important; }
+.cv-module-item-actions .doc-view-pill:hover, .cv-module-item-actions .download-pill:hover { border-radius: 6px !important; }
+/* Files found inside a Page module item, expanded after first paint. Inset and
+   ruled so they read as belonging to the Page row above rather than as more
+   top-level module items. */
+.cv-module-subfiles { display: flex !important; flex-direction: column !important; gap: 2px !important; margin: 1px 0 4px 26px !important; padding: 4px 0 4px 9px !important; border-left: 2px solid rgba(128, 128, 128, 0.28) !important; flex-shrink: 0 !important; }
+.cv-module-subfiles:empty { display: none !important; }
+.cv-module-subfile { display: flex !important; align-items: center !important; gap: 7px !important; padding: 3px 6px !important; border-radius: 5px !important; min-width: 0 !important; }
+.cv-module-subfile:hover { background: rgba(128, 128, 128, 0.11) !important; }
+.cv-module-subfile-name { flex: 1 1 auto !important; min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; font-size: 11.5px !important; color: var(--text-secondary) !important; }
+.cv-module-subfile-actions { margin-left: auto !important; }
 .cv-lock-badge { font-size: 11px !important; }
 /* Grades table */
 .cv-grade-table { display: flex !important; flex-direction: column !important; gap: 4px !important; }
