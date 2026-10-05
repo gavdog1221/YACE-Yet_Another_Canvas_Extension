@@ -8,11 +8,15 @@
 // filters → scrollable cards -- and are re-mounted on every rebuild (never
 // recreated), so the Campus & Tools drawer and all other header actions leave
 // them untouched. Every panel is laid out by the flexbox engine
-// (reflowDashboardLayout): visible panels split the dashboard into equal rows
-// of up to 3 (wide) / 2 (mid) / 1 (narrow) columns, Schedule owns a full-width
-// bottom row, and collapsed panels free their space by dropping out of the
-// flex flow. Food & Reg moved out of the panels entirely into the Campus &
-// Tools drawer (components/campus-tools-modal.js).
+// (reflowDashboardLayout): News and Info share a left column, Assignments is
+// pinned tall in the middle, Grades is pinned tall on the right, Schedule owns
+// a full-width bottom row, and collapsed panels free their space by dropping out
+// of the flex flow. Food & Reg moved out of the panels entirely into the Campus
+// & Tools drawer (components/campus-tools-modal.js).
+//
+// The former "Recent Grades" panel is gone: its per-submission feed now renders
+// inside the Grades panel, grouped beneath the course each submission belongs
+// to, so a course's score and its history sit together in one column.
 
 import { state } from '../state.js';
 import { escapeHTML } from '../utils/text.js';
@@ -23,7 +27,6 @@ import { getSeenAnnouncements } from '../views/announcements-view.js';
 import { openAssignmentModal } from '../components/assignment-modal.js';
 import { renderCurrentView, renderTaskList, updateProgressBar } from '../views/upcoming-view.js';
 import { renderGradesView } from '../views/grades-view.js';
-import { renderRecentGradesView } from '../views/recent-grades-view.js';
 import { renderAnnouncementsView } from '../views/announcements-view.js';
 import { renderGeneralView } from '../views/general-view.js';
 import { renderScheduleView } from '../views/schedule-view.js';
@@ -164,7 +167,6 @@ function getVisiblePanels() {
   const visible = {
     assignments: !collapsed.assignments,
     news: !collapsed.news,
-    'recent-grades': !collapsed['recent-grades'],
     grades: !collapsed.grades,
     info: !collapsed.info,
     schedule: !collapsed.schedule,
@@ -175,17 +177,24 @@ function getVisiblePanels() {
 }
 
 // --- Panel order & pinned layout ------------------------------------------
-// The four SIDE tabs keep a user-draggable order (getPanelOrder()); they are
-// ALWAYS small, equal tiles. Assignments is pinned TALL in the middle with
-// two tiles stacked on its left and two on its right (the first two order
-// entries = left column, last two = right column, top→bottom). Schedule is
-// pinned as the full-width bottom row. Neither Assignments nor Schedule is
-// draggable nor in the order array. On a narrow single-column window the same
-// order just stacks vertically (Assignments hero row on top, then tiles, then
+// Three pinned panels bracket two draggable tiles (see reflowDashboardLayout):
+// News and Info stack in the LEFT column in the user's dragged order, Grades is
+// pinned TALL on the right, Assignments is pinned TALL in the middle, and
+// Schedule is pinned as the full-width bottom row. Only News and Info live in
+// the order array. On a narrow single-column window the same order just stacks
+// vertically (Assignments hero row on top, then Grades, then the tiles, then
 // Schedule). A user drag keeps the in-flight tile arrangement in `dragOrder`
 // until dragend persists it (one storage write).
 let dragOrder = null;   // in-flight reorder before dragend persists it
 let dragKey = null;     // panel currently being dragged
+
+// Panels that never move and never drag. The value is the left-column slot a
+// drop onto that panel targets: 0 = top, 1 = bottom.
+const PINNED_PANELS = { assignments: 0, grades: 0, schedule: 1 };
+// Membership test deliberately does NOT read the value's truthiness: testing
+// `!PINNED_PANELS[key]` would treat `assignments: 0` as draggable and let a user
+// drag the pinned centre panel into a left slot.
+const isPinned = (key) => Object.prototype.hasOwnProperty.call(PINNED_PANELS, key);
 
 function getEffectivePanelOrder() {
   return dragOrder || getPanelOrder();
@@ -211,22 +220,30 @@ function reflowDashboardLayout(grid) {
 
   const assignments = panels.get('assignments');
   const showAssignments = visible.assignments && assignments;
-  // Order slots are FIXED columns: entries 0-1 are always the LEFT column,
-  // 2-3 always the RIGHT column. Hiding a tile never re-distributes the
-  // remaining tiles — its column just has one fewer tile (which then
-  // stretches to fill). Only if BOTH tiles of a side are hidden does that
-  // column disappear entirely and Assignments swell into the freed width.
+  const grades = panels.get('grades');
+  const showGrades = visible.grades && grades;
+  // The two draggable tiles fill the LEFT column, in order: slot 0 = top,
+  // slot 1 = bottom. Hiding a tile never re-distributes the other — the column
+  // just has one fewer tile, which stretches to fill. Only if BOTH are hidden
+  // does the column disappear and the pinned panels swell into the freed width.
   const tileKeys = getEffectivePanelOrder();
   const visibleTiles = tileKeys.filter((k) => visible[k]);
   const slotVisible = (idx) => (tileKeys[idx] && visible[tileKeys[idx]]) ? tileKeys[idx] : null;
 
   if (bp === 'narrow') {
-    // Single-column stack: Assignments hero row on top, tiles in dragged
-    // order below, then Schedule — the dashboard scrolls when it overflows.
+    // Single-column stack: Assignments hero row on top, then Grades on its own
+    // (taller) row, then the tiles in dragged order, then Schedule — the
+    // dashboard scrolls when it overflows.
     if (showAssignments) {
       const row = document.createElement('div');
       row.className = 'fs-layout-row fs-layout-row-hero';
       row.appendChild(assignments);
+      grid.appendChild(row);
+    }
+    if (showGrades) {
+      const row = document.createElement('div');
+      row.className = 'fs-layout-row fs-layout-row-grades';
+      row.appendChild(grades);
       grid.appendChild(row);
     }
     visibleTiles.forEach((k) => {
@@ -239,12 +256,12 @@ function reflowDashboardLayout(grid) {
       }
     });
   } else {
-    // Wide / mid: three-zone middle — Assignments TALL in the CENTER with two
-    // tiles stacked left and two stacked right (fixed slots). Order of
-    // appends matters: left column, THEN Assignments, THEN right column, so
-    // the flex row puts Assignments between the two sides. If a side has only
+    // Wide / mid: three-zone middle — the two tiles stacked in the LEFT column,
+    // Assignments TALL in the CENTER, Grades TALL on the RIGHT. Order of
+    // appends matters: left column, THEN Assignments, THEN Grades, so the flex
+    // row puts the two pinned panels between them. If the left column has only
     // one visible tile it stretches to the full column height; if both are
-    // hidden the column is dropped and Assignments widens to fill.
+    // hidden the column is dropped and the pinned panels widen to fill.
     const middle = document.createElement('div');
     middle.className = 'fs-middle-zone';
     const leftCol = document.createElement('div');
@@ -256,18 +273,9 @@ function reflowDashboardLayout(grid) {
         if (p) leftCol.appendChild(p);
       }
     });
-    const rightCol = document.createElement('div');
-    rightCol.className = 'fs-tile-column';
-    [2, 3].forEach((idx) => {
-      const k = slotVisible(idx);
-      if (k) {
-        const p = panels.get(k);
-        if (p) rightCol.appendChild(p);
-      }
-    });
     if (leftCol.children.length) middle.appendChild(leftCol);
     if (showAssignments) middle.appendChild(assignments);
-    if (rightCol.children.length) middle.appendChild(rightCol);
+    if (showGrades) middle.appendChild(grades);
     if (middle.children.length) grid.appendChild(middle);
   }
 
@@ -284,17 +292,16 @@ function reflowDashboardLayout(grid) {
 }
 
 // --- Panel drag / reorder --------------------------------------------------
-// Pointer-based drag on each panel's grip (see attachDragHandlers). The four
-// side tabs occupy a fixed 2-left / 2-right arrangement of SLOTS (order[0] =
-// left-top, [1] = left-bottom, [2] = right-top, [3] = right-bottom). Dragging
-// a tile onto a slot SWAPS it with the tile currently there — so both sides
-// always keep exactly two tiles, and Assignments (tall center) / Schedule
-// (bottom) never move. The in-flight arrangement lives in `dragOrder` and
-// every pointer move reflows the grid live; it is only persisted on release
-// (one storage write, one mirror to browser.storage.local) — dragging never
-// writes storage.
+// Pointer-based drag on each panel's grip (see attachDragHandlers). The two
+// draggable tiles occupy the two slots of the LEFT column (order[0] = top,
+// [1] = bottom). Dragging a tile onto a slot SWAPS it with the tile currently
+// there, so the column always keeps its two slots and the pinned panels —
+// Assignments (tall centre), Grades (tall right) and Schedule (bottom) — never
+// move. The in-flight arrangement lives in `dragOrder` and every pointer move
+// reflows the grid live; it is only persisted on release (one storage write,
+// one mirror to browser.storage.local) — dragging never writes storage.
 
-// Swap dragKey into `slot` (0-3) of `order`. Returns the new order, or null
+// Swap dragKey into `slot` (0-1) of `order`. Returns the new order, or null
 // when nothing changed (already home / no movement).
 function swapDragIntoSlot(slot, order) {
   const from = order.indexOf(dragKey);
@@ -311,13 +318,13 @@ function attachDragHandlers(grid) {
     if (!key || panel.dataset.dragWired === '1') return;
     panel.dataset.dragWired = '1';
 
-    // Only the four side tabs drag — Assignments (pinned tall center) and
-    // Schedule (pinned bottom row) are fixed. This is POINTER-based, not
-    // HTML5 drag-and-drop: reflowDashboardLayout re-parents panels on every
-    // drop-hover, which makes native DnD cancel itself mid-gesture; tracking
-    // the pointer manually (elementFromPoint hit-testing) survives the live
-    // reflow and behaves identically in Chrome MV2 and Firefox.
-    if (key !== 'schedule' && key !== 'assignments') {
+    // Only the two side tiles drag — Assignments (pinned tall center), Grades
+    // (pinned tall right) and Schedule (pinned bottom row) are fixed. This is
+    // POINTER-based, not HTML5 drag-and-drop: reflowDashboardLayout re-parents
+    // panels on every drop-hover, which makes native DnD cancel itself
+    // mid-gesture; tracking the pointer manually (elementFromPoint hit-testing)
+    // survives the live reflow and behaves identically in Chrome MV2 and Firefox.
+    if (!isPinned(key)) {
       const handle = panel.querySelector('.panel-drag-handle');
       if (!handle) return;
       handle.addEventListener('pointerdown', (e) => {
@@ -329,22 +336,21 @@ function attachDragHandlers(grid) {
         let started = false;
         const start = { x: e.clientX, y: e.clientY };
 
-        // Which slot is under the pointer? Dock → left-top, Assignments →
-        // left-top, Schedule → right-bottom; otherwise the tile's own slot
-        // (top half) or the slot below it on the same side (bottom half).
+        // Which slot is under the pointer? Dock → left-top, Assignments or
+        // Grades → left-top, Schedule → left-bottom; otherwise the tile's own
+        // slot (top half) or the slot below it (bottom half).
         const resolveSlot = (el, y) => {
           if (el.closest('.fs-panel-dock')) return 0;
           const target = el.closest('.fullscreen-panel');
           if (!target) return null;
           const tKey = panelKeyOf(target);
           if (!tKey || tKey === dragKey) return null;
-          if (tKey === 'assignments') return 0;
-          if (tKey === 'schedule') return 3;
+          if (isPinned(tKey)) return PINNED_PANELS[tKey];
           const t = dragOrder ? dragOrder.indexOf(tKey) : -1;
           if (t === -1) return null;
           const rect = target.getBoundingClientRect();
           const below = (y - rect.top) > rect.height / 2;
-          return (below && (t === 0 || t === 2)) ? t + 1 : t;
+          return (below && t === 0) ? t + 1 : t;
         };
 
         const onMove = (ev) => {
@@ -446,7 +452,6 @@ function initDashboardPanels(listArea, grid) {
 const DOCK_DEFS = {
   assignments: 'Assignments',
   news: 'News',
-  'recent-grades': 'Recent Grades',
   grades: 'Grades',
   info: 'Info',
   schedule: 'Schedule',
@@ -464,9 +469,10 @@ function makePanelDock() {
   all.textContent = '\u21F1 All'; // ⇱
   dock.appendChild(all);
 
-  // Pills mirror the layout: Assignments (pinned hero) first, then the four
-  // side tabs in their dragged order, then Schedule (pinned bottom).
-  const pillKeys = ['assignments', ...getEffectivePanelOrder(), 'schedule'];
+  // Pills mirror the layout: Assignments (pinned centre) first, then the two
+  // draggable tiles in their order, then the pinned Grades column, then
+  // Schedule (pinned bottom).
+  const pillKeys = ['assignments', ...getEffectivePanelOrder(), 'grades', 'schedule'];
   pillKeys.forEach((key) => {
     const label = DOCK_DEFS[key];
     if (!label) return;
@@ -605,25 +611,24 @@ export function renderDashboardView(listContainer, strip, searchRow, progressEl)
     updateProgressBar();
     renderTaskList(assignments.body);
 
-    // Left column, top half: News (announcements) -- fills the upper 50% and
-    // scrolls its own body.
+    // Left column, top: News (announcements) -- shares the column with Info.
     const news = getScrapePanel(prevPanels, forceRebuild, 'news', 'News',
       countUnseen() > 0 ? String(countUnseen()) : '', 'is-news',
       (body) => renderAnnouncementsView(body, hiddenCourses));
 
-    // Left column, bottom half: Recent Grades feed (newest-graded first).
-    const recentGrades = getScrapePanel(prevPanels, forceRebuild, 'recent-grades', 'Recent Grades', '', '',
-      (body) => renderRecentGradesView(body, hiddenCourses));
+    // Left column, bottom: Info (course links, syllabus, modules).
+    const info = getScrapePanel(prevPanels, forceRebuild, 'info', 'Info', '', '',
+      (body) => renderGeneralView(body, hiddenCourses));
 
-    // Right column, top: Grades (GPA / stats).
+    // Right column, TALL: Grades. This panel absorbed the former standalone
+    // "Recent Grades" feed -- `recent: true` asks renderGradesView to list each
+    // course's most recent graded submissions in a column directly beneath that
+    // course's grade summary, so a course's score and its history sit together
+    // instead of being split across two panels.
     const gradeAlertCount = (state.gradeChangeAlerts || []).length;
     const grades = getScrapePanel(prevPanels, forceRebuild, 'grades', 'Grades',
       gradeAlertCount > 0 ? String(gradeAlertCount) : '', 'is-grades',
-      (body) => renderGradesView(body, hiddenCourses));
-
-    // Right column, bottom: Info (course links, syllabus, modules).
-    const info = getScrapePanel(prevPanels, forceRebuild, 'info', 'Info', '', '',
-      (body) => renderGeneralView(body, hiddenCourses));
+      (body) => renderGradesView(body, hiddenCourses, { recent: true }));
 
     // Full-width bottom row: Schedule — the weekly timetable of the classes
     // the user is currently taking, built from their Canvas course list +
@@ -633,7 +638,7 @@ export function renderDashboardView(listContainer, strip, searchRow, progressEl)
     const schedule = getScrapePanel(prevPanels, forceRebuild, 'schedule', 'Schedule', '', '',
       (body) => renderScheduleView(body));
 
-    grid.append(news, recentGrades, assignments.panel, grades, info, schedule);
+    grid.append(news, info, assignments.panel, grades, schedule);
     listContainer.appendChild(grid);
     initDashboardPanels(listContainer, grid);
   } finally {

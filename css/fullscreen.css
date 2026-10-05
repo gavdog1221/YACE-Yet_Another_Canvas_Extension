@@ -181,12 +181,11 @@
   min-width: 0 !important;
 }
 
-/* Three-zone middle (wide / mid): Assignments pinned TALL in the center with
-   the four side tabs flanking it — two stacked on the left, two on the right
-   (see reflowDashboardLayout). Columns and the central panel all stretch to
-   the zone's full height; Assignments keeps a stronger width share. The zone
-   takes ~2/3 of the dashboard height so Schedule keeps its familiar ~1/3
-   full-width strip below. */
+/* Three-zone middle (wide / mid): the two draggable tiles (News, Info) stacked
+   in a LEFT column, Assignments pinned TALL in the center, Grades pinned TALL on
+   the right (see reflowDashboardLayout). All three stretch to the zone's full
+   height; Assignments keeps a stronger width share. The zone takes ~2/3 of the
+   dashboard height so Schedule keeps its familiar ~1/3 full-width strip below. */
 .fs-middle-zone {
   display: flex !important;
   flex: 2 1 0 !important;
@@ -203,7 +202,13 @@
   gap: 12px !important;
 }
 .fs-middle-zone .fullscreen-panel.assignments-panel { flex: 1.4 1 0 !important; }
+/* Grades is a pinned full-height column, not a draggable tile, so it sizes like
+   Assignments rather than splitting the left column's share. */
+.fs-middle-zone > .fullscreen-panel.grades-panel { flex: 1.2 1 0 !important; }
 .fs-tile-column .fullscreen-panel { flex: 1 1 0 !important; }
+/* Narrow stack: Grades keeps more room than a plain tile — it holds the whole
+   per-course grade + recent-submission column list. */
+.fs-layout-row-grades { flex: 2 1 0 !important; }
 
 .fullscreen-panel {
   display: flex !important;
@@ -289,20 +294,17 @@
 .fullscreen-panel.assignments-panel .fullscreen-panel-body::-webkit-scrollbar-track { background: transparent !important; }
 .fullscreen-panel.assignments-panel .fullscreen-panel-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px !important; }
 
-/* Side panels (News, Recent Grades, Grades, Info) keep the same slim
-   scrollbar inside their half-height bodies so long feeds read cleanly. */
+/* Side panels (News, Grades, Info) keep the same slim scrollbar inside their
+   bodies so long feeds read cleanly. */
 .fullscreen-panel.news-panel .fullscreen-panel-body::-webkit-scrollbar,
-.fullscreen-panel.recent-grades-panel .fullscreen-panel-body::-webkit-scrollbar,
 .fullscreen-panel.grades-panel .fullscreen-panel-body::-webkit-scrollbar,
 .fullscreen-panel.info-panel .fullscreen-panel-body::-webkit-scrollbar,
 .fullscreen-panel.schedule-panel .fullscreen-panel-body::-webkit-scrollbar { width: 6px !important; }
 .fullscreen-panel.news-panel .fullscreen-panel-body::-webkit-scrollbar-track,
-.fullscreen-panel.recent-grades-panel .fullscreen-panel-body::-webkit-scrollbar-track,
 .fullscreen-panel.grades-panel .fullscreen-panel-body::-webkit-scrollbar-track,
 .fullscreen-panel.info-panel .fullscreen-panel-body::-webkit-scrollbar-track,
 .fullscreen-panel.schedule-panel .fullscreen-panel-body::-webkit-scrollbar-track { background: transparent !important; }
 .fullscreen-panel.news-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
-.fullscreen-panel.recent-grades-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
 .fullscreen-panel.grades-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
 .fullscreen-panel.info-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
 .fullscreen-panel.schedule-panel .fullscreen-panel-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px !important; }

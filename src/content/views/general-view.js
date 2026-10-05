@@ -75,13 +75,13 @@ export function renderGeneralView(listContainer, hiddenCourses) {
 
     const syllabusTitle = res.hasSyllabusContent ? 'Open full syllabus' : 'Syllabus looks empty on Canvas, but check anyway';
 
-    // Optional per-course extras from the parsed syllabus: office-hours line
-    // and the detected grade-weight breakdown.
+    // Optional per-course extra from the parsed syllabus: the office-hours line.
+    // The grade-weight breakdown deliberately does NOT appear here — the Grades
+    // panel already shows it (with the distribution picker) on each course's
+    // summary card, and repeating it twice made this panel read like a grade
+    // report instead of the links-and-hours list it is meant to be.
     const officeHoursLine = Array.isArray(res.officeHours) && res.officeHours.length > 0
     ? res.officeHours.map(b => b.display).join(' · ')
-    : '';
-    const gradeWeightsRow = Array.isArray(res.gradeWeights) && res.gradeWeights.length > 0
-    ? res.gradeWeights.map(w => `<span class="gci-weight-chip">${escapeHTML(w.label)} ${w.pct}%</span>`).join('')
     : '';
 
     card.innerHTML = `
@@ -95,14 +95,12 @@ export function renderGeneralView(listContainer, hiddenCourses) {
         <div class="resource-links-row">
           <button type="button" class="resource-link-pill gci-open-btn ${res.hasSyllabusContent ? '' : 'is-empty'}" data-preview-url="${escapeHTML(res.syllabusPdfUrl || res.syllabusUrl || '')}" data-preview-title="Syllabus" title="${escapeHTML(syllabusTitle)}">📄 Syllabus</button>
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.modulesUrl || '')}" data-preview-title="Modules" title="Preview the Modules page">🗂 Modules</button>
-          <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.filesUrl || '')}" data-preview-title="Files" title="Preview the Files page">📁 Files</button>
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.gradesUrl || '')}" data-preview-title="Grades" title="Preview the Grades page">📊 Grades</button>
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.peopleUrl || '')}" data-preview-title="People" title="Preview the class roster">👥 People</button>
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.homeUrl || '')}" data-preview-title="Home" title="Preview the course home page">🏠 Home</button>
         </div>
 
         ${officeHoursLine ? `<div class="gci-office-hours">🕐 ${escapeHTML(officeHoursLine)}</div>` : ''}
-        ${gradeWeightsRow ? `<div class="gci-weights-row">${gradeWeightsRow}</div>` : ''}
       </div>
       `;
 
@@ -138,8 +136,10 @@ export function renderGeneralView(listContainer, hiddenCourses) {
     }
 
     // Resource buttons: PDFs (syllabus) keep the in-app document preview;
-    // Modules / Files / Grades / People / Home now render as custom YACE
-    // views built from the Canvas API instead of the raw Canvas page.
+    // Modules / Grades / People / Home now render as custom YACE views built
+    // from the Canvas API instead of the raw Canvas page. There is no Files
+    // pill — the course viewer's own nav bar has one, and a second link to the
+    // same page from the same card was just one more thing to scan past.
     if (course.canvasCourseId) {
       card.querySelectorAll('.gci-open-btn').forEach(btn => {
         btn.addEventListener('click', () => {
