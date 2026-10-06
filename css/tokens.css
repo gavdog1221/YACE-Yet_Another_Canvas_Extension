@@ -43,7 +43,6 @@
 --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.09);
 --shadow-card-hover: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16);
---mouse-x: -1000px; --mouse-y: -1000px;
 }
 
 #module-tasks-widget[data-theme="synthwave"] {
@@ -105,3 +104,74 @@
 #yace-submission-modal[data-theme="crimson"] { --primary-accent: #ff375f; --secondary-accent: #ff6482; --accent-glow: rgba(255, 55, 95, 0.38); --accent-soft: rgba(255, 55, 95, 0.16); }
 #yace-submission-modal[data-theme="indigo"] { --primary-accent: #5e5ce6; --secondary-accent: #bf5af2; --accent-glow: rgba(94, 92, 230, 0.38); --accent-soft: rgba(94, 92, 230, 0.16); }
 #yace-submission-modal[data-theme="teal"] { --primary-accent: #40c8e0; --secondary-accent: #64d2ff; --accent-glow: rgba(64, 200, 224, 0.38); --accent-soft: rgba(64, 200, 224, 0.16); }
+
+/* ==========================================================================
+ *  MOTION POLICY
+ *  The dashboard is always-on and full-viewport, so an `infinite` animation
+ *  here is a permanent repaint loop: several of ours animate `box-shadow`
+ *  (shimmerSweep, criticalNeonBreathing, pulseNeonDot, completePulse,
+ *  tabAlertPulse), which cannot be composited and so re-rasterizes every
+ *  frame at display refresh rate. Two switches turn that off:
+ *    1. html.yace-tab-hidden — set by injectWidget() from visibilitychange.
+ *       Nothing is painted on a hidden tab, so `paused` costs nothing and
+ *       stops the loop from keeping the CPU/GPU out of idle.
+ *    2. prefers-reduced-motion — an explicit OS-level request; snap the loops
+ *       to their end state instead of removing them so nothing disappears.
+ *
+ *  Two deliberate constraints:
+ *  - Every selector is anchored on a YACE root ID (or a widget ID), because
+ *    the rules they override are themselves `animation: ... !important`, so
+ *    specificity decides. The heaviest loop rule is
+ *    `.progress-container.is-all-done .progress-bar-bg` at (0,3,0); ID-anchored
+ *    (1,2,0)/(1,1,0) beats it. Do NOT "simplify" these to `.yace-root *` —
+ *    a class anchor loses the cascade fight and the loops keep running.
+ *  - Scoped to YACE roots on purpose: never restyle Canvas's own animations.
+ *    If you add a new overlay root, list it in BOTH blocks below.
+ * ========================================================================== */
+html.yace-tab-hidden #module-tasks-widget,
+html.yace-tab-hidden #module-tasks-widget *,
+html.yace-tab-hidden #module-tasks-widget *::before,
+html.yace-tab-hidden #module-tasks-widget *::after,
+html.yace-tab-hidden #yace-assignment-modal,
+html.yace-tab-hidden #yace-assignment-modal *,
+html.yace-tab-hidden #yace-submission-modal,
+html.yace-tab-hidden #yace-submission-modal *,
+html.yace-tab-hidden #campus-tools-modal,
+html.yace-tab-hidden #campus-tools-modal *,
+html.yace-tab-hidden #canvas-doc-preview-modal,
+html.yace-tab-hidden #canvas-doc-preview-modal *,
+html.yace-tab-hidden #canvas-shortcuts-modal,
+html.yace-tab-hidden #canvas-shortcuts-modal *,
+html.yace-tab-hidden #canvas-viewer-modal,
+html.yace-tab-hidden #canvas-viewer-modal *,
+html.yace-tab-hidden .whats-new-banner,
+html.yace-tab-hidden .whats-new-banner * {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #module-tasks-widget,
+  #module-tasks-widget *,
+  #module-tasks-widget *::before,
+  #module-tasks-widget *::after,
+  #yace-assignment-modal,
+  #yace-assignment-modal *,
+  #yace-submission-modal,
+  #yace-submission-modal *,
+  #campus-tools-modal,
+  #campus-tools-modal *,
+  #canvas-doc-preview-modal,
+  #canvas-doc-preview-modal *,
+  #canvas-shortcuts-modal,
+  #canvas-shortcuts-modal *,
+  #canvas-viewer-modal,
+  #canvas-viewer-modal *,
+  .whats-new-banner,
+  .whats-new-banner * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

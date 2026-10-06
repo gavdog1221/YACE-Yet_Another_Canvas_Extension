@@ -59,8 +59,30 @@ body.yace-fullscreen-active .ic-Layout-contentMain > *:not(#module-tasks-widget)
   animation: yaceFullscreenIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both !important;
 }
 
-#module-tasks-widget.is-fullscreen::after { border-radius: 0 !important; }
 #module-tasks-widget.is-fullscreen::before { left: 0 !important; right: 0 !important; border-radius: 0 !important; }
+/* Fullscreen sits on `position: fixed; inset: 0` over a page whose own
+   content is display:none'd, so a full-viewport `backdrop-filter: blur(48px)`
+   here blurred a flat color — identical pixels, re-run on every repaint. So
+   drop the filter and make the surface OPAQUE instead, by pre-compositing the
+   base rule's translucent bottom gradient over the obsidian base (#14141a):
+     rgba(45,45,54,0.28) over #14141a -> #1b1b22
+     rgba(15,15,20,0.45) over #14141a -> #121217
+   The two aurora radials stay translucent on top, unchanged, so the frosted
+   obsidian look survives with zero blur cost.
+
+   The bottom layer MUST stay opaque and dark. Do not "fix" a washed-out or
+   grey fullscreen by tinting these toward the page background — an earlier
+   attempt sampled Canvas's root color for the base and turned the whole
+   dashboard flat grey on light-themed Canvas. This surface is its own thing
+   and owns its own darkness. */
+#module-tasks-widget.is-fullscreen {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(100, 210, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(100% 80% at 100% 100%, rgba(191, 90, 242, 0.08) 0%, transparent 50%),
+    linear-gradient(165deg, #1b1b22 0%, #121217 100%) !important;
+}
 
 @keyframes yaceFullscreenIn {
   from { opacity: 0; transform: scale(0.98); }
@@ -84,14 +106,14 @@ background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), trans
 opacity: 0.8 !important; z-index: 2 !important; border-radius: 99px !important;
 }
 
-/* Prismatic cursor refraction sheen */
-#module-tasks-widget::after {
-content: "" !important;
-position: absolute !important;
-inset: 0 !important;
-border-radius: 28px !important;
-background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.12), transparent 70%) !important;
-pointer-events: none !important;
-z-index: 1 !important;
-mix-blend-mode: overlay !important;
-}
+/* The prismatic cursor "refraction sheen" that used to live here as
+   #module-tasks-widget::after is GONE on purpose. In fullscreen this element
+   covers the whole viewport, so a ::after radial-gradient driven by
+   --mouse-x/--mouse-y meant every single mousemove forced a full-screen
+   gradient repaint under `mix-blend-mode: overlay` — a blend mode defeats
+   compositor layer isolation, so the whole page was re-blended per event
+   (mouse/trackpad events fire at 125-1000 Hz, including idle jitter). It was
+   the single largest source of CPU/GPU load in the extension. Don't re-add a
+   mouse-tracking pseudo-element; if a cursor effect is ever wanted again, gate
+   it behind rAF AND keep it compositable (transform/opacity only). */
+

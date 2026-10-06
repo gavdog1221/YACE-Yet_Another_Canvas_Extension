@@ -17,7 +17,9 @@
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.2s ease !important;
   position: relative !important; z-index: 3 !important;
 }
-.announcement-card:hover { background: rgba(255, 255, 255, 0.09) !important; transform: translateX(2px) translateY(-2px) !important; border-color: var(--task-course-accent) !important; box-shadow: var(--shadow-card-hover), 0 0 16px var(--task-course-glow) !important; }
+/* Same fix as .mod-task-card:hover — no all-sides border-color repaint, no
+   16px colored halo. The 3px left accent bar already carries the hue. */
+.announcement-card:hover { background: rgba(255, 255, 255, 0.09) !important; transform: translateX(2px) translateY(-2px) !important; border-left-color: var(--task-course-accent) !important; box-shadow: var(--shadow-card-hover) !important; }
 .announcement-card.announcement-unseen { border-left-width: 4px !important; }
 /* Starred announcements highlight like starred tasks: accent left border +
    glow, and the star itself stays lit. */

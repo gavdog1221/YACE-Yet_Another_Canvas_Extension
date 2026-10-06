@@ -271,18 +271,12 @@ export async function injectWidget(container) {
       }
     }
 
-    widget.addEventListener('mousemove', (e) => {
-      const rect = widget.getBoundingClientRect();
-      const x = Math.round(e.clientX - rect.left);
-      const y = Math.round(e.clientY - rect.top);
-      widget.style.setProperty('--mouse-x', `${x}px`);
-      widget.style.setProperty('--mouse-y', `${y}px`);
-    });
-
-    widget.addEventListener('mouseleave', () => {
-      widget.style.setProperty('--mouse-x', `-1000px`);
-      widget.style.setProperty('--mouse-y', `-1000px`);
-    });
+    // The widget covers the entire viewport in fullscreen, so a mousemove
+    // handler here used to run on every mouse event on the page: forced layout
+    // (getBoundingClientRect) + two setProperty calls that invalidated style
+    // for the whole tree + a full-screen radial-gradient repaint under
+    // mix-blend-mode. Removed deliberately — see the note where
+    // #module-tasks-widget::after used to live in widget-shell.css.
 
     document.getElementById('toggle-shortcuts-btn').addEventListener('click', openShortcutsModal);
     // Each header tool button deep-links to its own tab in the Campus & Tools
@@ -441,7 +435,11 @@ export async function injectWidget(container) {
       // every page load but are throttled so quick page-to-page navigation
       // can't stack several heavy scans back to back.
       let lastLoadScanAt = 0;
-      setInterval(() => {
+      const pollTick = () => {
+        // A hidden tab paints nothing, so every write below is pure waste —
+        // and the background rescan is ~50-200 network requests. Skip the tick
+        // entirely and let visibilitychange run it once on the way back.
+        if (document.hidden) return;
         if (document.getElementById('module-tasks-widget')) {
           updateProgressBar();
           // Rebuilding the assignments list every 30s stacked duplicate
@@ -480,7 +478,21 @@ export async function injectWidget(container) {
             });
           }
         }
-      }, 30000);
+      };
+      setInterval(pollTick, 30000);
+
+      // Tab-visibility switch. `yace-tab-hidden` pauses every CSS animation
+      // under the YACE roots (tokens.css MOTION POLICY) — the infinite
+      // shimmer/pulse loops repaint at display refresh rate forever otherwise,
+      // which is what pinned the CPU/GPU awake with the tab in the background.
+      // Coming back runs one poll tick immediately rather than waiting out the
+      // 30s interval.
+      document.addEventListener('visibilitychange', () => {
+        document.documentElement.classList.toggle('yace-tab-hidden', document.hidden);
+        if (!document.hidden) pollTick();
+      });
+      // In case the tab was already hidden when the widget mounted.
+      document.documentElement.classList.toggle('yace-tab-hidden', document.hidden);
 
       const cachedGradesLocal = loadLocalGradesCache();
       if (cachedGradesLocal) {
