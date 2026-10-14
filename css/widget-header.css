@@ -11,49 +11,50 @@
 display: flex !important; justify-content: space-between !important; align-items: center !important;
 flex-wrap: wrap !important; row-gap: 8px !important;
 padding-bottom: 16px !important; margin-bottom: 4px !important;
-border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+border-bottom: 2px solid #000000 !important;
 position: relative !important; z-index: 200 !important;
 }
 #module-tasks-widget .title-row { display: flex !important; align-items: center !important; gap: 9px !important; }
 #module-tasks-widget .title {
 font-weight: 700 !important; font-size: 16px !important; color: #ffffff !important;
-letter-spacing: -0.3px !important; display: flex !important; align-items: center !important; gap: 9px !important;
+letter-spacing: 0.2px !important; display: flex !important; align-items: center !important; gap: 9px !important;
 }
 #module-tasks-widget .title::before {
 content: "" !important; display: inline-block !important; width: 9px !important; height: 9px !important;
-border-radius: 50% !important;
-background: radial-gradient(circle at 35% 30%, #fff, var(--primary-accent) 60%) !important;
-box-shadow: 0 0 10px var(--accent-glow) !important;
+border-radius: 0;
+background: var(--primary-accent) !important;
+box-shadow: none !important;
 }
 
 .widget-controls { display: flex !important; flex-wrap: nowrap !important; justify-content: flex-end !important; gap: 8px !important; align-items: center !important; }
 
 .icon-btn {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  color: var(--text-secondary) !important;
-  border-radius: 999px !important;
+  background: #3a3a42 !important;
+  border: 1px solid #000000 !important;
+  color: var(--text-primary) !important;
+  border-radius: 0;
   padding: 10px 16px !important;
   cursor: pointer !important;
   font-size: 14px !important; font-weight: 700 !important;
   min-height: 40px !important;
   display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 6px !important;
-  backdrop-filter: blur(10px) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  box-shadow: inset 1px 1px 0 #7a7a84, inset -1px -1px 0 #17171b !important;
+  transition: background 0.12s ease !important;
 }
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.16) !important; color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.28) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-  transform: translateY(-1px) !important;
+  background: #47474f !important; color: #ffffff !important;
+  box-shadow: inset 1px 1px 0 #8a8a94, inset -1px -1px 0 #101014 !important;
 }
-.icon-btn:disabled { opacity: 0.35 !important; cursor: not-allowed !important; transform: none !important; }
+.icon-btn:active {
+  background: #313138 !important;
+  box-shadow: inset 1px 1px 0 #17171b, inset -1px -1px 0 #6a6a73 !important;
+}
+.icon-btn:disabled { opacity: 0.35 !important; cursor: not-allowed !important; }
 .icon-btn.eye-btn { position: relative !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; font-size: 15px !important; min-width: 44px !important; }
-.icon-btn.eye-btn.has-hidden { color: var(--primary-accent) !important; border-color: var(--accent-glow) !important; }
+.icon-btn.eye-btn.has-hidden { color: var(--primary-accent) !important; border-color: var(--primary-accent) !important; }
 .icon-btn.eye-btn.active {
   background: var(--accent-soft) !important; border-color: var(--primary-accent) !important; color: #ffffff !important;
-  box-shadow: 0 0 12px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  box-shadow: inset 1px 1px 0 #17171b, inset -1px -1px 0 #6a6a73 !important;
 }
 
 /* Campus & Tools nav button — the entry point for the Food + WebCat Reg
@@ -76,7 +77,7 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
   color: #ffffff !important;
   background: var(--accent-soft) !important;
   border-color: var(--primary-accent) !important;
-  box-shadow: 0 0 12px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 .campus-tools-btn .campus-tools-icon { font-size: 16px !important; line-height: 1 !important; }
 .campus-tools-btn .campus-tools-label,
@@ -104,9 +105,9 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
 
 .theme-trigger-swatch {
   width: 17px !important; height: 17px !important;
-  border-radius: 50% !important;
+  border-radius: 0;
   background: var(--gem-color) !important;
-  box-shadow: 0 0 6px var(--gem-color), inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
   flex-shrink: 0 !important;
   transition: background 0.2s ease, box-shadow 0.2s ease !important;
 }
@@ -130,12 +131,12 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
   flex-direction: column !important;
   gap: 2px !important;
   background: rgba(20, 20, 25, 0.97) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  
+  
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
   padding: 6px !important;
-  border-radius: 16px !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
   opacity: 0 !important;
   pointer-events: none !important;
   transform: translateY(-6px) scale(0.97) !important;
@@ -156,7 +157,7 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
   gap: 9px !important;
   width: 100% !important;
   padding: 7px 9px !important;
-  border-radius: 10px !important;
+  border-radius: 0;
   background: transparent !important;
   border: 1px solid transparent !important;
   cursor: pointer !important;
@@ -173,10 +174,10 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
 
 .theme-option-swatch {
   width: 18px !important; height: 18px !important;
-  border-radius: 50% !important;
+  border-radius: 0;
   background: var(--gem-color) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 8px var(--gem-color) !important;
+  box-shadow: none !important;
   flex-shrink: 0 !important;
 }
 
@@ -199,8 +200,8 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
 
 .eye-badge {
   position: absolute !important; top: -3px !important; right: -3px !important; width: 7px !important; height: 7px !important;
-  border-radius: 50% !important; background: var(--primary-accent) !important;
-  box-shadow: 0 0 6px var(--primary-accent), 0 0 0 2px rgba(20, 20, 24, 0.7) !important; pointer-events: none !important;
+  border-radius: 0; background: var(--primary-accent) !important;
+  box-shadow: 0 0 0 2px rgba(20, 20, 24, 0.7) !important; pointer-events: none !important;
 }
 /* 🔔 bell button: count pill for unread recent notifications. */
 .campus-tools-btn[data-tool="notifications"] { position: relative !important; }
@@ -209,6 +210,6 @@ box-shadow: 0 0 10px var(--accent-glow) !important;
   background: var(--primary-accent) !important; color: #000000 !important;
   font-size: 8.5px !important; font-weight: 900 !important; line-height: 1 !important;
   padding: 1px 3px !important; min-width: 13px !important; justify-content: center !important;
-  border-radius: 99px !important; box-shadow: 0 0 6px var(--accent-glow), 0 0 0 2px rgba(20, 20, 24, 0.7) !important;
+  border-radius: 0; box-shadow: 0 0 0 2px rgba(20, 20, 24, 0.7) !important;
   pointer-events: none !important;
 }

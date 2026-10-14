@@ -288,10 +288,6 @@ function persistDiningMenus() {
     }
   }
 
-export async function ensureTodaysDiningMenus() {
-    return ensureDiningMenusForDate(new Date());
-  }
-
 // Failed days are kept for one retry window so repeated interaction with a
 // down FoodPro doesn't hammer it on every click; after it elapses (or on an
 // explicit retry) the next call refetches, so menus recover without reloading

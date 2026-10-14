@@ -215,9 +215,10 @@
   flex-direction: column !important;
   min-height: 0 !important;
   min-width: 0 !important;
-  background: rgba(255, 255, 255, 0.035) !important;
-  border: 1px solid rgba(255, 255, 255, 0.09) !important;
-  border-radius: 16px !important;
+  background: #26262b !important;
+  border: 1px solid #4a4a52 !important;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 #55555e, inset -1px -1px 0 #131317 !important;
   overflow: hidden !important;
 }
 
@@ -225,16 +226,14 @@
    reflowDashboardLayout (no grid-area keying anymore). */
 
 /* Center stage: the Assignments panel is the primary focal surface —
-   brighter glass, accent edge, and a soft glow so it reads as the hero.
+   accent edge and a raised bevel so it reads as the hero.
    overflow must be visible (not clipped) because the relocated search row's
    course-filter menu and horizon pie are absolutely-positioned descendants;
    only the task-list body scrolls. */
 .fullscreen-panel.assignments-panel {
-  background:
-    radial-gradient(110% 120% at 10% 0%, var(--accent-soft) 0%, transparent 55%),
-    rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 0 0 1px var(--accent-glow), 0 10px 34px rgba(0, 0, 0, 0.3) !important;
+  background: #33333a !important;
+  border-color: var(--primary-accent) !important;
+  box-shadow: inset 1px 1px 0 #7a7a84, inset -1px -1px 0 #0d0d10, 3px 3px 0 rgba(0, 0, 0, 0.5) !important;
   overflow: visible !important;
 }
 .fullscreen-panel.assignments-panel .fullscreen-panel-title { color: var(--primary-accent) !important; }
@@ -262,7 +261,7 @@
   font-size: 9px !important;
   font-weight: 900 !important;
   padding: 1px 6px !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   line-height: 1.3 !important;
 }
 .fullscreen-panel-badge.is-grades { background: var(--primary-accent) !important; }
@@ -292,7 +291,7 @@
 .fullscreen-panel.assignments-panel .mod-task-card { margin-bottom: 0 !important; }
 .fullscreen-panel.assignments-panel .fullscreen-panel-body::-webkit-scrollbar { width: 6px !important; }
 .fullscreen-panel.assignments-panel .fullscreen-panel-body::-webkit-scrollbar-track { background: transparent !important; }
-.fullscreen-panel.assignments-panel .fullscreen-panel-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px !important; }
+.fullscreen-panel.assignments-panel .fullscreen-panel-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 0; }
 
 /* Side panels (News, Grades, Info) keep the same slim scrollbar inside their
    bodies so long feeds read cleanly. */
@@ -307,7 +306,7 @@
 .fullscreen-panel.news-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
 .fullscreen-panel.grades-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
 .fullscreen-panel.info-panel .fullscreen-panel-body::-webkit-scrollbar-thumb,
-.fullscreen-panel.schedule-panel .fullscreen-panel-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px !important; }
+.fullscreen-panel.schedule-panel .fullscreen-panel-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18) !important; border-radius: 0; }
 
 /* Center toolbar: Due / Overdue / Done switcher + "+ Task", mirroring the
    shell tab buttons that fullscreen hides from the top strip. */
@@ -327,7 +326,7 @@
   padding: 0 12px !important;
   background: transparent !important;
   border: 1px solid transparent !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   color: var(--text-secondary) !important;
   font-size: 11.5px !important;
   font-weight: 700 !important;
@@ -341,7 +340,7 @@
   background: var(--accent-soft) !important;
   border-color: var(--primary-accent) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 10px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 .fs-task-toolbar .fs-task-add { margin-left: auto !important; height: 26px !important; padding: 0 12px !important; line-height: 24px !important; }
 
@@ -402,7 +401,7 @@
   color: var(--text-tertiary) !important;
   font-size: 10.5px !important;
   font-weight: 700 !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   padding: 3px 11px !important;
   cursor: pointer !important;
   white-space: nowrap !important;
@@ -414,7 +413,7 @@
   background: var(--accent-soft) !important;
   border-color: var(--primary-accent) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 8px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 /* The "⇱ All" reset pill is a static action, not a state toggle — it never
    lights up with the per-panel pills, so its look can't be confused with
@@ -450,7 +449,7 @@
   justify-content: center !important;
   padding: 0 !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 7px !important;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.06) !important;
   color: var(--text-secondary) !important;
   font-size: 10px !important;
@@ -479,7 +478,7 @@
   cursor: grab !important;
   user-select: none !important;
   touch-action: none !important;
-  border-radius: 6px !important;
+  border-radius: 0;
   transition: color 0.15s ease, background 0.15s ease !important;
 }
 .panel-drag-handle:hover { color: #ffffff !important; background: rgba(255, 255, 255, 0.08) !important; }

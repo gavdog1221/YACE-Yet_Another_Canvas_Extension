@@ -7,27 +7,25 @@
  *  do not reformat bodies. See manifest.json `content_scripts.css` for order.
  *  ========================================================================== */
 /* ==========================================================================
- *  YACE — LIQUID GLASS / FROSTED OBSIDIAN THEME
- *  Inspired by macOS Tahoe & visionOS: translucent frosted glass panels,
- *  specular top highlights, soft ambient elevation shadows, continuous
- *  (superellipse-style) corner radii, and restrained tinted glow used only
- *  for focus/active states rather than constant neon.
- *  ========================================================================== */
+ *  YACE — CHUNKY RETRO / BEVELED DESKTOP THEME
+ *  Flat opaque surfaces, hard 2px bevel edges (light top-left / dark
+ *  bottom-right), square corners, no blur, no glow. Theme variants recolor
+ *  the accent only — the beveled surface treatment stays constant.
+ * ========================================================================== */
 
 /* ==========================================================================
- *  LIQUID GLASS PALETTES (theme variants recolor the tint only — the
- *  frosted-glass surface treatment itself stays constant)
- *  ========================================================================== */
+ *  RETRO PALETTES (theme variants recolor the accent only)
+ * ========================================================================== */
 #module-tasks-widget {
---primary-accent: #0a84ff;         /* Liquid Blue */
+--primary-accent: #0a84ff;         /* Blue */
 --secondary-accent: #64d2ff;
 --accent-glow: rgba(10, 132, 255, 0.35);
 --accent-soft: rgba(10, 132, 255, 0.16);
---card-bg: rgba(255, 255, 255, 0.055);
---border-subtle: rgba(255, 255, 255, 0.14);
---glass-obsidian: rgba(26, 26, 30, 0.6);
---glass-obsidian-2: rgba(34, 34, 39, 0.5);
---glass-edge: rgba(255, 255, 255, 0.16);
+--card-bg: #2b2b31;
+--border-subtle: #4a4a52;
+--glass-obsidian: #26262b;
+--glass-obsidian-2: #202024;
+--glass-edge: #6a6a73;
 --text-primary: rgba(255, 255, 255, 0.95);
 --text-secondary: rgba(235, 235, 245, 0.65);
 --text-tertiary: rgba(235, 235, 245, 0.42);
@@ -39,51 +37,51 @@
 --success-soft: rgba(48, 209, 88, 0.16);
 --gold: #ffd60a;
 --purple: #bf5af2;
---shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
---shadow-card: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.09);
---shadow-card-hover: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
---shadow-float: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+--shadow-panel: inset 1px 1px 0 #6b6b74, inset -1px -1px 0 #121216;
+--shadow-card: inset 1px 1px 0 #55555e, inset -1px -1px 0 #131317;
+--shadow-card-hover: inset 1px 1px 0 #7a7a84, inset -1px -1px 0 #0d0d10;
+--shadow-float: inset 1px 1px 0 #6b6b74, inset -1px -1px 0 #121216, 3px 3px 0 rgba(0, 0, 0, 0.55);
 }
 
 #module-tasks-widget[data-theme="synthwave"] {
---primary-accent: #bf5af2;         /* Orchid Glass */
+--primary-accent: #bf5af2;         /* Orchid */
 --secondary-accent: #ff375f;
 --accent-glow: rgba(191, 90, 242, 0.38);
 --accent-soft: rgba(191, 90, 242, 0.16);
 }
 #module-tasks-widget[data-theme="emerald"] {
---primary-accent: #30d158;         /* Mint Glass */
+--primary-accent: #30d158;         /* Mint */
 --secondary-accent: #63e6e0;
 --accent-glow: rgba(48, 209, 88, 0.38);
 --accent-soft: rgba(48, 209, 88, 0.16);
 }
 #module-tasks-widget[data-theme="stealth"] {
---primary-accent: #e5e5ea;         /* Graphite Glass */
+--primary-accent: #e5e5ea;         /* Graphite */
 --secondary-accent: #98989f;
 --accent-glow: rgba(229, 229, 234, 0.25);
 --accent-soft: rgba(229, 229, 234, 0.1);
---card-bg: rgba(255, 255, 255, 0.04);
+--card-bg: #303036;
 }
 #module-tasks-widget[data-theme="sunset"] {
---primary-accent: #ff9f0a;         /* Amber Glass */
+--primary-accent: #ff9f0a;         /* Amber */
 --secondary-accent: #ffd60a;
 --accent-glow: rgba(255, 159, 10, 0.38);
 --accent-soft: rgba(255, 159, 10, 0.16);
 }
 #module-tasks-widget[data-theme="crimson"] {
---primary-accent: #ff375f;         /* Rose Glass */
+--primary-accent: #ff375f;         /* Rose */
 --secondary-accent: #ff6482;
 --accent-glow: rgba(255, 55, 95, 0.38);
 --accent-soft: rgba(255, 55, 95, 0.16);
 }
 #module-tasks-widget[data-theme="indigo"] {
---primary-accent: #5e5ce6;         /* Indigo Glass */
+--primary-accent: #5e5ce6;         /* Indigo */
 --secondary-accent: #bf5af2;
 --accent-glow: rgba(94, 92, 230, 0.38);
 --accent-soft: rgba(94, 92, 230, 0.16);
 }
 #module-tasks-widget[data-theme="teal"] {
---primary-accent: #40c8e0;         /* Teal Glass */
+--primary-accent: #40c8e0;         /* Teal */
 --secondary-accent: #64d2ff;
 --accent-glow: rgba(64, 200, 224, 0.38);
 --accent-soft: rgba(64, 200, 224, 0.16);

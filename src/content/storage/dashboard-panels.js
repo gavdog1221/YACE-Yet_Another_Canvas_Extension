@@ -62,14 +62,6 @@ function sanitizeOrder(raw) {
   return out.length === ALL_CONTENT_KEYS.length ? out : null;
 }
 
-export function hasPanelOrder() {
-  try {
-    return localStorage.getItem(STORAGE_KEY_DASHBOARD_PANEL_ORDER) !== null;
-  } catch (e) {
-    return false;
-  }
-}
-
 export function getPanelOrder() {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY_DASHBOARD_PANEL_ORDER) || 'null');
@@ -85,10 +77,4 @@ export function setPanelOrder(order) {
     localStorage.setItem(STORAGE_KEY_DASHBOARD_PANEL_ORDER, JSON.stringify(clean));
   } catch (e) {}
   return clean;
-}
-
-export function resetPanelOrder() {
-  try {
-    localStorage.removeItem(STORAGE_KEY_DASHBOARD_PANEL_ORDER);
-  } catch (e) {}
 }

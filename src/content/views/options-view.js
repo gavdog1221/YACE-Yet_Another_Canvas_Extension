@@ -15,7 +15,7 @@ import { escapeHTML } from '../utils/text.js';
 import { renderCurrentView, renderFilterPills } from './upcoming-view.js';
 
 // Shared by the Class Colors controls so a toggle/pick repaints every panel
-// (task cards, grades, news, info, kanban + the filter dots) immediately.
+// (task cards, grades, news, info + the filter dots) immediately.
 function applyColorOptions() {
     state.forceDashboardRebuild = true;
     renderFilterPills();

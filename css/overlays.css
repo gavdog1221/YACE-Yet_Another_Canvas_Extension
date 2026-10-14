@@ -8,13 +8,10 @@
  *  RELOAD PROGRESS BANNER OVERLAY
  *  ========================================================================== */
 .reload-progress-overlay {
-  background:
-    radial-gradient(100% 150% at 12% 0%, var(--accent-soft) 0%, transparent 52%),
-    radial-gradient(90% 130% at 92% 12%, var(--accent-glow) 0%, transparent 60%),
-    linear-gradient(165deg, #26262e 0%, #10101a 100%) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
+  background: #1c1c21 !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 18px !important; padding: 14px 16px !important; margin: 10px 0 !important;
+  border-radius: 0; padding: 14px 16px !important; margin: 10px 0 !important;
   box-shadow: var(--shadow-card) !important;
   display: flex !important; flex-direction: column !important; gap: 8px !important;
   position: relative !important; z-index: 5 !important; animation: fadeInDown 0.25s cubic-bezier(0.22, 1, 0.36, 1) !important;
@@ -25,32 +22,29 @@
 .reload-spinner { display: inline-block !important; animation: spin 0.8s infinite linear !important; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .reload-percent-text { color: var(--text-primary) !important; font-family: ui-monospace, SFMono-Regular, monospace !important; }
-.reload-bar-bg { height: 6px !important; background: rgba(0, 0, 0, 0.3) !important; border-radius: 99px !important; overflow: hidden !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
-.reload-bar-fill { height: 100% !important; width: 0%; background: linear-gradient(90deg, var(--secondary-accent), var(--primary-accent)) !important; box-shadow: 0 0 8px var(--accent-glow) !important; transition: width 0.25s ease !important; }
+.reload-bar-bg { height: 6px !important; background: rgba(0, 0, 0, 0.3) !important; border-radius: 0; overflow: hidden !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.reload-bar-fill { height: 100% !important; width: 0%; background: var(--primary-accent) !important; box-shadow: none !important; transition: width 0.25s ease !important; }
 
 /* ==========================================================================
  *  HIDDEN COURSES POPOVER
  *  ========================================================================== */
 .hidden-courses-popover {
   display: none !important; flex-direction: column !important; gap: 10px !important;
-  background:
-    radial-gradient(100% 150% at 12% 0%, var(--accent-soft) 0%, transparent 52%),
-    radial-gradient(90% 130% at 92% 12%, var(--accent-glow) 0%, transparent 60%),
-    linear-gradient(165deg, #26262e 0%, #10101a 100%) !important;
-  backdrop-filter: blur(26px) saturate(180%) !important;
+  background: #1c1c21 !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 18px !important; padding: 14px !important; margin: 12px 0 !important;
+  border-radius: 0; padding: 14px !important; margin: 12px 0 !important;
   box-shadow: var(--shadow-float) !important; position: relative !important; z-index: 4 !important;
 }
 .hidden-courses-popover.is-visible { display: flex !important; }
 .hidden-popover-header { display: flex !important; justify-content: space-between !important; align-items: center !important; }
 .hidden-popover-title { font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important; color: var(--text-secondary) !important; }
-.hidden-popover-close { background: transparent !important; border: none !important; color: var(--text-secondary) !important; font-size: 15px !important; cursor: pointer !important; padding: 2px 5px !important; border-radius: 999px !important; }
+.hidden-popover-close { background: transparent !important; border: none !important; color: var(--text-secondary) !important; font-size: 15px !important; cursor: pointer !important; padding: 2px 5px !important; border-radius: 0; }
 .hidden-popover-close:hover { color: #ffffff !important; background: rgba(255, 255, 255, 0.14) !important; }
 .hidden-pills-list { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
 .hidden-pill-btn {
   background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 999px !important; color: var(--text-primary) !important; font-size: 11px !important; font-weight: 600 !important;
+  border-radius: 0; color: var(--text-primary) !important; font-size: 11px !important; font-weight: 600 !important;
   padding: 6px 13px !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 6px !important;
   transition: all 0.18s ease !important;
 }
@@ -62,32 +56,29 @@
  *  ========================================================================== */
 .notes-popover {
   display: none !important; flex-direction: column !important; gap: 10px !important;
-  background:
-    radial-gradient(100% 150% at 12% 0%, var(--accent-soft) 0%, transparent 52%),
-    radial-gradient(90% 130% at 92% 12%, var(--accent-glow) 0%, transparent 60%),
-    linear-gradient(165deg, #26262e 0%, #10101a 100%) !important;
-  backdrop-filter: blur(26px) saturate(180%) !important;
+  background: #1c1c21 !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 18px !important; padding: 14px !important; margin: 12px 0 !important;
+  border-radius: 0; padding: 14px !important; margin: 12px 0 !important;
   box-shadow: var(--shadow-float) !important; position: relative !important; z-index: 4 !important;
 }
 .notes-popover.is-visible { display: flex !important; }
 .notes-popover-header { display: flex !important; align-items: center !important; gap: 8px !important; }
 .notes-popover-title { flex: 1 !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.5px !important; text-transform: uppercase !important; color: var(--text-secondary) !important; }
-.notes-popover-close { background: transparent !important; border: none !important; color: var(--text-secondary) !important; font-size: 15px !important; cursor: pointer !important; padding: 2px 5px !important; border-radius: 999px !important; }
+.notes-popover-close { background: transparent !important; border: none !important; color: var(--text-secondary) !important; font-size: 15px !important; cursor: pointer !important; padding: 2px 5px !important; border-radius: 0; }
 .notes-popover-close:hover { color: #ffffff !important; background: rgba(255, 255, 255, 0.14) !important; }
-.notes-add-btn { background: var(--accent-soft) !important; border: 1px solid var(--accent-glow) !important; color: var(--primary-accent) !important; border-radius: 999px !important; font-size: 10.5px !important; font-weight: 800 !important; padding: 4px 10px !important; cursor: pointer !important; transition: all 0.15s ease !important; white-space: nowrap !important; }
+.notes-add-btn { background: var(--accent-soft) !important; border: 1px solid var(--accent-glow) !important; color: var(--primary-accent) !important; border-radius: 0; font-size: 10.5px !important; font-weight: 800 !important; padding: 4px 10px !important; cursor: pointer !important; transition: all 0.15s ease !important; white-space: nowrap !important; }
 .notes-add-btn:hover { background: var(--accent-glow) !important; color: #ffffff !important; }
 .notes-list { display: flex !important; flex-direction: column !important; gap: 8px !important; max-height: 320px !important; overflow-y: auto !important; }
 .notes-empty { margin: 0 !important; font-size: 11px !important; color: var(--text-tertiary) !important; text-align: center !important; padding: 12px 0 !important; }
 .note-item {
   --note-accent: #ffd60a;
   display: flex !important; flex-direction: column !important; gap: 6px !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)) !important;
+  background: #26262b !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-left: 3px solid var(--note-accent) !important;
-  border-radius: 12px !important; padding: 8px 10px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  border-radius: 0; padding: 8px 10px !important;
+  box-shadow: none !important;
 }
 .note-text {
   width: 100% !important; box-sizing: border-box !important; resize: none !important;
@@ -98,37 +89,34 @@
 .note-text::placeholder { color: var(--text-tertiary) !important; }
 .note-footer { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 6px !important; }
 .note-color-dots { display: flex !important; gap: 5px !important; }
-.note-color-dot { width: 13px !important; height: 13px !important; border-radius: 50% !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; cursor: pointer !important; padding: 0 !important; transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
+.note-color-dot { width: 13px !important; height: 13px !important; border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.25) !important; cursor: pointer !important; padding: 0 !important; transition: transform 0.12s ease, box-shadow 0.12s ease !important; }
 .note-color-dot:hover { transform: scale(1.2) !important; }
 .note-color-dot.active { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
-.note-delete { background: transparent !important; border: none !important; color: var(--text-tertiary) !important; font-size: 13px !important; cursor: pointer !important; padding: 2px 5px !important; border-radius: 999px !important; }
+.note-delete { background: transparent !important; border: none !important; color: var(--text-tertiary) !important; font-size: 13px !important; cursor: pointer !important; padding: 2px 5px !important; border-radius: 0; }
 .note-delete:hover { color: #ff6b81 !important; background: rgba(255, 59, 92, 0.12) !important; }
 
 /* ==========================================================================
  *  WHAT'S-NEW TOAST BANNER
  *  (fixed top-center overlay outside the widget; palette vars are copied
  *  onto the element by whats-new-banner.js, defaults below are just the
- *  Liquid Blue fallback)
+ *  Liquid Blue fallback) -> Blue fallback)
  *  ========================================================================== */
 .whats-new-banner {
   --primary-accent: #0a84ff; --secondary-accent: #64d2ff; --accent-glow: rgba(10, 132, 255, 0.35); --accent-soft: rgba(10, 132, 255, 0.16);
   --card-bg: rgba(255, 255, 255, 0.055); --border-subtle: rgba(255, 255, 255, 0.14);
   --text-primary: rgba(255, 255, 255, 0.95); --text-secondary: rgba(235, 235, 245, 0.65); --text-tertiary: rgba(235, 235, 245, 0.42);
-  --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --shadow-card: inset 1px 1px 0 #55555e, inset -1px -1px 0 #131317;
+  --shadow-float: inset 1px 1px 0 #6b6b74, inset -1px -1px 0 #121216, 3px 3px 0 rgba(0, 0, 0, 0.55);
   position: fixed !important; top: 16px !important; left: 50% !important;
   transform: translateX(-50%) !important; z-index: 2147483100 !important;
   width: min(680px, calc(100vw - 36px)) !important;
   max-height: min(70vh, 560px) !important; overflow-y: auto !important;
-  background:
-    radial-gradient(100% 150% at 12% 0%, var(--accent-soft) 0%, transparent 52%),
-    radial-gradient(90% 130% at 92% 12%, var(--accent-glow) 0%, transparent 60%),
-    linear-gradient(165deg, #26262e 0%, #10101a 100%) !important;
-  backdrop-filter: blur(26px) saturate(180%) !important;
+  background: #1c1c21 !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 18px !important; padding: 14px 16px !important;
+  border-radius: 0; padding: 14px 16px !important;
   box-shadow: var(--shadow-float) !important;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif !important;
+  font-family: "MS Sans Serif", Tahoma, Geneva, "Segoe UI", sans-serif !important;
   color: var(--text-primary) !important;
   animation: wnbIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
@@ -141,14 +129,14 @@
 .wnb-close {
   background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: var(--text-secondary) !important; font-size: 11px !important; font-weight: 700 !important;
-  border-radius: 999px !important; padding: 5px 12px !important; cursor: pointer !important;
+  border-radius: 0; padding: 5px 12px !important; cursor: pointer !important;
   transition: all 0.18s ease !important;
 }
 .wnb-close:hover { background: var(--accent-soft) !important; border-color: var(--primary-accent) !important; color: #ffffff !important; }
 .wnb-body { display: flex !important; flex-direction: column !important; gap: 10px !important; margin-top: 12px !important; }
 .wnb-group {
   background: rgba(255, 255, 255, 0.05) !important; border: 1px solid var(--border-subtle) !important;
-  border-radius: 14px !important; padding: 10px 12px !important;
+  border-radius: 0; padding: 10px 12px !important;
   display: flex !important; flex-direction: column !important; gap: 7px !important;
 }
 .wnb-group-title {
@@ -158,13 +146,13 @@
 }
 .wnb-count {
   background: var(--accent-soft) !important; color: var(--primary-accent) !important;
-  border-radius: 999px !important; font-size: 10px !important; padding: 1px 8px !important;
+  border-radius: 0; font-size: 10px !important; padding: 1px 8px !important;
 }
 .wnb-item { display: flex !important; align-items: baseline !important; gap: 8px !important; font-size: 12px !important; line-height: 1.35 !important; }
 .wnb-course {
   flex: none !important; max-width: 130px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important;
   font-size: 10.5px !important; font-weight: 800 !important; background: var(--accent-soft) !important; color: var(--primary-accent) !important;
-  border-radius: 999px !important; padding: 2px 9px !important;
+  border-radius: 0; padding: 2px 9px !important;
 }
 .wnb-name { flex: 1 !important; min-width: 0 !important; color: var(--text-primary) !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
 .wnb-score { font-style: normal !important; font-family: ui-monospace, SFMono-Regular, monospace !important; font-size: 11px !important; color: var(--secondary-accent) !important; }

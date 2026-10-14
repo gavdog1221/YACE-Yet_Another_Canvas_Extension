@@ -18,13 +18,13 @@
 .sched-crns {
   font-size: 10.5px !important; font-weight: 700 !important; color: var(--text-tertiary) !important;
   background: rgba(255, 255, 255, 0.06) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 999px !important; padding: 2px 9px !important;
+  border-radius: 0; padding: 2px 9px !important;
 }
 .sched-refresh-btn {
   margin-left: auto !important; flex-shrink: 0 !important;
   background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: var(--text-secondary) !important; font-size: 11px !important; font-weight: 700 !important;
-  border-radius: 999px !important; padding: 4px 12px !important; cursor: pointer !important;
+  border-radius: 0; padding: 4px 12px !important; cursor: pointer !important;
   transition: all 0.18s ease !important;
 }
 .sched-refresh-btn:hover { background: var(--accent-soft) !important; border-color: var(--primary-accent) !important; color: #ffffff !important; }
@@ -32,7 +32,7 @@
 .sched-conflict-warn {
   font-size: 11px !important; font-weight: 700 !important; color: var(--warning) !important;
   background: var(--warning-soft) !important; border: 1px solid rgba(255, 159, 10, 0.35) !important;
-  border-radius: 10px !important; padding: 6px 10px !important; flex-shrink: 0 !important;
+  border-radius: 0; padding: 6px 10px !important; flex-shrink: 0 !important;
 }
 
 .sched-grid {
@@ -62,21 +62,21 @@
   position: relative !important;
   background: rgba(255, 255, 255, 0.025) !important;
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
-  border-radius: 10px !important;
+  border-radius: 0;
   overflow: hidden !important;
 }
 .sched-block {
   position: absolute !important; left: 2px !important; right: 2px !important;
-  border-radius: 8px !important; padding: 3px 6px !important; box-sizing: border-box !important;
+  border-radius: 0; padding: 3px 6px !important; box-sizing: border-box !important;
   overflow: hidden !important; min-height: 20px !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 60%), var(--sched-soft) !important;
+  background: var(--sched-soft) !important;
   border: 1px solid var(--sched-accent) !important;
   color: var(--text-primary) !important;
   display: flex !important; flex-direction: column !important; gap: 1px !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25), 0 0 8px var(--sched-glow) !important;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
-.sched-block:hover { transform: translateY(-1px) !important; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), 0 0 12px var(--sched-glow) !important; z-index: 2 !important; }
+.sched-block:hover { transform: translateY(-1px) !important; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important; z-index: 2 !important; }
 .sched-block-code { font-size: 10px !important; font-weight: 800 !important; color: var(--sched-accent) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .sched-block-title { font-size: 10.5px !important; font-weight: 600 !important; line-height: 1.2 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .sched-block-meta { font-size: 9px !important; font-weight: 600 !important; color: var(--text-tertiary) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
@@ -92,7 +92,7 @@
 .sched-na-chip {
   font-size: 10.5px !important; font-weight: 600 !important; color: var(--text-secondary) !important;
   background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 999px !important; padding: 3px 10px !important;
+  border-radius: 0; padding: 3px 10px !important;
 }
 .sched-errors { margin-top: 4px !important; }
 .sched-error-chip { color: var(--danger) !important; border-color: var(--danger-soft) !important; background: var(--danger-soft) !important; }

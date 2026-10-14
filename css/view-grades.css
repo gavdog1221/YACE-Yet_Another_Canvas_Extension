@@ -15,36 +15,35 @@
 .gpa-card.tier-f, .course-grade-summary-card.tier-f, .grade-card.tier-f { --tier-color: #ff453a; --tier-glow: rgba(255, 69, 58, 0.35); }
 
 .gpa-card {
-  background: linear-gradient(150deg, rgba(70, 70, 78, 0.4) 0%, rgba(18, 18, 22, 0.6) 100%) !important;
-  backdrop-filter: blur(22px) saturate(180%) !important;
-  border: 1px solid var(--tier-color) !important; box-shadow: var(--shadow-card), 0 0 16px var(--tier-glow) !important;
-  border-radius: 16px !important; padding: 10px 14px !important; margin-bottom: 10px !important;
+  background: #2b2b31 !important;
+  border: 1px solid var(--tier-color) !important; box-shadow: var(--shadow-card) !important;
+  border-radius: 0; padding: 10px 14px !important; margin-bottom: 10px !important;
   display: flex !important; align-items: center !important; justify-content: space-between !important;
   position: relative !important; z-index: 3 !important; transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
 .gpa-info-left { display: flex !important; flex-direction: column !important; gap: 2px !important; }
 .gpa-label { font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.6px !important; text-transform: uppercase !important; color: var(--text-secondary) !important; display: flex !important; align-items: center !important; gap: 6px !important; }
-.gpa-whatif-flag { font-size: 9px !important; font-weight: 800 !important; letter-spacing: 0.4px !important; color: #000000 !important; background: var(--primary-accent) !important; border-radius: 999px !important; padding: 2px 7px !important; text-transform: uppercase !important; }
+.gpa-whatif-flag { font-size: 9px !important; font-weight: 800 !important; letter-spacing: 0.4px !important; color: #000000 !important; background: var(--primary-accent) !important; border-radius: 0; padding: 2px 7px !important; text-transform: uppercase !important; }
 .gpa-sub { font-size: 10px !important; font-weight: 500 !important; color: var(--text-tertiary) !important; }
 .gpa-ring-wrap { position: relative !important; width: 46px !important; height: 46px !important; flex-shrink: 0 !important; }
 .gpa-ring {
-  position: absolute !important; inset: 0 !important; border-radius: 50% !important;
+  position: absolute !important; inset: 0 !important; border-radius: 50%;
   background: conic-gradient(var(--tier-color) calc(var(--gpa-pct, 0) * 1%), rgba(255, 255, 255, 0.1) 0) !important;
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px)) !important;
   mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px)) !important;
-  filter: drop-shadow(0 0 8px var(--tier-glow)) !important;
+  filter: none !important;
   transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 .gpa-ring-value {
   position: absolute !important; inset: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;
   font-family: ui-monospace, SFMono-Regular, monospace !important; font-weight: 800 !important; font-size: 13px !important; color: var(--tier-color) !important;
-  text-shadow: 0 0 12px var(--tier-glow) !important;
+  text-shadow: none !important;
 }
 
 .whatif-matrix-card {
-  background: rgba(255, 255, 255, 0.05) !important; backdrop-filter: blur(22px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.05) !important; 
   border: 1px solid rgba(255, 255, 255, 0.16) !important; box-shadow: var(--shadow-card) !important;
-  border-radius: 20px !important; padding: 16px !important; margin-bottom: 14px !important; position: relative !important; z-index: 3 !important;
+  border-radius: 0; padding: 16px !important; margin-bottom: 14px !important; position: relative !important; z-index: 3 !important;
 }
 .whatif-top-bar { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 8px !important; margin-bottom: 10px !important; padding-bottom: 9px !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }
 .whatif-toggle { display: inline-flex !important; align-items: center !important; gap: 6px !important; background: transparent !important; border: none !important; padding: 0 !important; margin: 0 !important; cursor: pointer !important; font: inherit !important; color: inherit !important; min-width: 0 !important; flex: 1 1 auto !important; text-align: left !important; }
@@ -56,22 +55,22 @@
 .whatif-matrix-card.is-collapsed .whatif-top-bar { border-bottom: none !important; padding-bottom: 0 !important; margin-bottom: 0 !important; }
 .whatif-matrix-card.is-collapsed .whatif-matrix-body { display: none !important; }
 .whatif-heading { font-size: 11.5px !important; font-weight: 700 !important; letter-spacing: 0.6px !important; text-transform: uppercase !important; color: var(--primary-accent) !important; display: flex !important; align-items: center !important; gap: 6px !important; white-space: nowrap !important; }
-.whatif-clear-all-btn { background: rgba(255, 69, 58, 0.14) !important; border: 1px solid rgba(255, 69, 58, 0.45) !important; color: #ffb4ae !important; border-radius: 999px !important; font-size: 10px !important; font-weight: 700 !important; padding: 4px 10px !important; cursor: pointer !important; transition: all 0.18s ease !important; }
+.whatif-clear-all-btn { background: rgba(255, 69, 58, 0.14) !important; border: 1px solid rgba(255, 69, 58, 0.45) !important; color: #ffb4ae !important; border-radius: 0; font-size: 10px !important; font-weight: 700 !important; padding: 4px 10px !important; cursor: pointer !important; transition: all 0.18s ease !important; }
 .whatif-clear-all-btn:hover { background: var(--danger) !important; color: #000000 !important; }
 .whatif-course-group { margin-bottom: 12px !important; }
 .whatif-course-header { display: flex !important; justify-content: space-between !important; align-items: center !important; font-size: 11px !important; font-weight: 700 !important; color: var(--text-primary) !important; margin-bottom: 6px !important; padding: 0 4px !important; }
 .whatif-course-tag { color: var(--primary-accent) !important; }
 .whatif-projected-badge { font-size: 11px !important; font-weight: 700 !important; color: var(--primary-accent) !important; font-family: ui-monospace, monospace !important; }
 .whatif-items-list { display: flex !important; flex-direction: column !important; gap: 6px !important; }
-.whatif-row-card { background: rgba(255, 255, 255, 0.04) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 14px !important; padding: 9px 11px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; transition: border-color 0.2s ease, background 0.2s ease !important; }
+.whatif-row-card { background: rgba(255, 255, 255, 0.04) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 0; padding: 9px 11px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; transition: border-color 0.2s ease, background 0.2s ease !important; }
 .whatif-row-card.has-sim { border-color: var(--accent-glow) !important; background: var(--accent-soft) !important; }
 .whatif-item-left { display: flex !important; flex-direction: column !important; gap: 2px !important; min-width: 0 !important; flex: 1 !important; }
 .whatif-item-title { font-size: 11.5px !important; font-weight: 600 !important; color: var(--text-primary) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .whatif-item-pts { font-size: 10px !important; font-weight: 600 !important; color: var(--text-secondary) !important; }
 .whatif-item-right { display: flex !important; align-items: center !important; gap: 6px !important; flex-shrink: 0 !important; }
-.whatif-matrix-input { width: 58px !important; background: rgba(0, 0, 0, 0.28) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; border-radius: 10px !important; color: var(--primary-accent) !important; font-size: 11.5px !important; font-weight: 700 !important; padding: 6px 6px !important; text-align: center !important; font-family: ui-monospace, monospace !important; outline: none !important; transition: border-color 0.15s ease, box-shadow 0.15s ease !important; }
+.whatif-matrix-input { width: 58px !important; background: rgba(0, 0, 0, 0.28) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; border-radius: 0; color: var(--primary-accent) !important; font-size: 11.5px !important; font-weight: 700 !important; padding: 6px 6px !important; text-align: center !important; font-family: ui-monospace, monospace !important; outline: none !important; transition: border-color 0.15s ease, box-shadow 0.15s ease !important; }
 .whatif-matrix-input:focus { border-color: var(--primary-accent) !important; box-shadow: 0 0 0 2px var(--accent-soft) !important; }
-.whatif-row-reset { background: transparent !important; border: none !important; color: var(--text-tertiary) !important; cursor: pointer !important; font-size: 14px !important; line-height: 1 !important; padding: 2px 5px !important; border-radius: 999px !important; transition: all 0.15s ease !important; }
+.whatif-row-reset { background: transparent !important; border: none !important; color: var(--text-tertiary) !important; cursor: pointer !important; font-size: 14px !important; line-height: 1 !important; padding: 2px 5px !important; border-radius: 0; transition: all 0.15s ease !important; }
 .whatif-row-reset:hover { color: #ffb4ae !important; background: rgba(255, 69, 58, 0.15) !important; }
 
 .course-grades-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; margin-bottom: 14px !important; }
@@ -87,9 +86,10 @@
    narrow for two. */
 .course-grades-cols { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; align-items: flex-start !important; gap: 8px !important; margin-bottom: 14px !important; }
 .course-grades-col { display: flex !important; flex-direction: column !important; gap: 12px !important; flex: 1 1 200px !important; min-width: 0 !important; }
-/* One course = one tile. The block is the glass surface and the summary card
-   inside it is just the clickable head, so a course reads as a single object
-   instead of three floating fragments whose bottoms never lined up.
+/* One course = one tile. The block is the flat surface (see --shadow-card in
+   tokens.css) and the summary card inside it is just the clickable head, so a
+   course reads as a single object instead of three floating fragments whose
+   bottoms never lined up.
 
    Every tile is the same height at rest, which is the whole point: the block's
    min-height is the tallest state any course can be in, and the list area is the
@@ -98,27 +98,27 @@
    course still grows only its own tile — the columns are flex, not grid, so the
    row-mate beside it keeps its natural height. */
 .course-grade-block {
-  --cg-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.075) 0%, var(--card-bg) 52%, rgba(0, 0, 0, 0.12) 100%);
+  --cg-surface: var(--card-bg);
   display: flex !important; flex-direction: column !important; min-width: 0 !important;
   box-sizing: border-box !important;
   /* Sized to the tallest state any course can be in: 88px head + 83px of three
      peek rows + 22px footer + 19px of tile chrome. Anything shorter has its slack
      go to the list, which is the one flex child allowed to grow. */
   min-height: 212px !important;
-  background: var(--cg-surface) !important; backdrop-filter: blur(18px) saturate(150%) !important;
+  background: var(--cg-surface) !important; 
   border: 1px solid rgba(255, 255, 255, 0.09) !important; border-left: 3px solid var(--course-accent, var(--tier-color)) !important;
-  box-shadow: var(--shadow-card) !important; border-radius: 15px !important; padding: 9px 11px 8px !important;
+  box-shadow: var(--shadow-card) !important; border-radius: 0; padding: 9px 11px 8px !important;
   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 .course-grade-block:hover {
-  --cg-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.11) 0%, var(--card-bg) 52%, rgba(0, 0, 0, 0.12) 100%);
-  border-color: var(--course-accent, var(--tier-color)) !important; box-shadow: var(--shadow-card-hover), 0 0 18px var(--course-glow, var(--tier-glow)) !important;
+  --cg-surface: #33333a;
+  border-color: var(--course-accent, var(--tier-color)) !important; box-shadow: var(--shadow-card-hover) !important;
   transform: translateY(-1px) !important;
 }
 .course-grade-block.is-filtering {
-  --cg-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.1) 0%, var(--card-bg) 52%, rgba(0, 0, 0, 0.08) 100%);
+  --cg-surface: #2e2e34;
   border-color: var(--course-accent, var(--tier-color)) !important;
-  box-shadow: 0 0 0 1px var(--course-accent, var(--tier-color)), 0 0 16px var(--course-glow, var(--tier-glow)) !important;
+  box-shadow: 0 0 0 1px var(--course-accent, var(--tier-color)) !important;
 }
 /* The head inside the tile: the same clickable region as ever, minus the surface
    it used to draw for itself. Its min-height is the tallest natural state — the
@@ -127,8 +127,8 @@
    of the card. The enter animation is off for the same reason it is off on the
    grade rows: every what-if keystroke rebuilds this panel. */
 .course-grade-block > .course-grade-summary-card {
-  background: none !important; backdrop-filter: none !important; border: none !important;
-  border-left: none !important; box-shadow: none !important; border-radius: 0 !important;
+  background: none !important;  border: none !important;
+  border-left: none !important; box-shadow: none !important; border-radius: 0;
   padding: 0 !important; min-height: 88px !important; animation: none !important;
   cursor: pointer !important;
 }
@@ -148,7 +148,7 @@
    showing three grades per course by default affordable in a 200px column, and
    dropping the enter animation matters too — every what-if keystroke re-rendered
    the panel, and thirty sliding cards per keystroke is what made it feel laggy. */
-.course-recent-col .grade-card { padding: 2px 7px !important; border-radius: 8px !important; border-left: none !important; background: rgba(255, 255, 255, 0.035) !important; box-shadow: none !important; margin-bottom: 0 !important; align-items: center !important; gap: 6px !important; animation: none !important; }
+.course-recent-col .grade-card { padding: 2px 7px !important; border-radius: 0; border-left: none !important; background: rgba(255, 255, 255, 0.035) !important; box-shadow: none !important; margin-bottom: 0 !important; align-items: center !important; gap: 6px !important; animation: none !important; }
 .course-recent-col .grade-card:hover { transform: none !important; background: rgba(255, 255, 255, 0.075) !important; box-shadow: none !important; }
 .course-recent-col .grade-body { flex-direction: row !important; align-items: center !important; gap: 6px !important; }
 .course-recent-col .grade-title { flex: 1 1 auto !important; min-width: 0 !important; font-size: 10.5px !important; font-weight: 600 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; line-height: 1.5 !important; }
@@ -162,7 +162,7 @@
    anything left to reveal, because a course with one grade and a course with
    nine must not produce two different tile heights. The button and the static
    label share a fixed height so swapping between them changes nothing. */
-.course-recent-toggle, .course-recent-foot { display: inline-flex !important; align-items: center !important; gap: 4px !important; align-self: flex-end !important; min-height: 18px !important; background: transparent !important; border: none !important; border-radius: 99px !important; padding: 2px 7px 2px 5px !important; margin: 0 !important; font: inherit !important; font-size: 9px !important; font-weight: 700 !important; letter-spacing: 0.4px !important; text-transform: uppercase !important; white-space: nowrap !important; color: var(--text-tertiary) !important; min-width: 0 !important; }
+.course-recent-toggle, .course-recent-foot { display: inline-flex !important; align-items: center !important; gap: 4px !important; align-self: flex-end !important; min-height: 18px !important; background: transparent !important; border: none !important; border-radius: 0; padding: 2px 7px 2px 5px !important; margin: 0 !important; font: inherit !important; font-size: 9px !important; font-weight: 700 !important; letter-spacing: 0.4px !important; text-transform: uppercase !important; white-space: nowrap !important; color: var(--text-tertiary) !important; min-width: 0 !important; }
 .course-recent-toggle { cursor: pointer !important; transition: background 0.2s ease, color 0.2s ease !important; }
 .course-recent-toggle:hover { background: rgba(255, 255, 255, 0.06) !important; color: var(--text-primary) !important; }
 /* Right-aligned and padded out to the button's box so the two read as one slot. */
@@ -170,29 +170,28 @@
 .course-recent-chevron { font-size: 8px !important; flex-shrink: 0 !important; }
 .course-recent-toggle-label { font-size: 9px !important; font-weight: 700 !important; letter-spacing: 0.4px !important; text-transform: uppercase !important; white-space: nowrap !important; }
 .course-grade-block.is-recent-open .course-recent-toggle-label { color: var(--course-accent, var(--primary-accent)) !important; }
-.course-recent-count { font-size: 9px !important; font-weight: 700 !important; color: var(--course-accent, var(--text-secondary)) !important; background: color-mix(in srgb, var(--course-accent, #ffffff) 18%, transparent) !important; border-radius: 99px !important; padding: 0 5px !important; line-height: 1.5 !important; flex-shrink: 0 !important; }
+.course-recent-count { font-size: 9px !important; font-weight: 700 !important; color: var(--course-accent, var(--text-secondary)) !important; background: color-mix(in srgb, var(--course-accent, #ffffff) 18%, transparent) !important; border-radius: 0; padding: 0 5px !important; line-height: 1.5 !important; flex-shrink: 0 !important; }
 
 /* Course summary card. The surface is a custom property rather than a `background`
    shorthand so the hover and filtered states can retint it without restating the
-   whole gradient — the specular top highlight is the same liquid-glass treatment
-   the rest of the dashboard uses (see --shadow-card in tokens.css). */
+   whole rule — the bevel comes from --shadow-card in tokens.css. */
 .course-grade-summary-card {
-  --cg-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.075) 0%, var(--card-bg) 52%, rgba(0, 0, 0, 0.12) 100%);
-  background: var(--cg-surface) !important; backdrop-filter: blur(18px) saturate(150%) !important;
+  --cg-surface: var(--card-bg);
+  background: var(--cg-surface) !important; 
   border: 1px solid rgba(255, 255, 255, 0.09) !important; border-left: 3px solid var(--course-accent, var(--tier-color)) !important;
   box-shadow: var(--shadow-card) !important;
-  border-radius: 15px !important; padding: 9px 11px 10px !important; display: flex !important; flex-direction: column !important; gap: 5px !important;
+  border-radius: 0; padding: 9px 11px 10px !important; display: flex !important; flex-direction: column !important; gap: 5px !important;
   cursor: pointer !important; transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 .course-grade-summary-card:hover {
-  --cg-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.11) 0%, var(--card-bg) 52%, rgba(0, 0, 0, 0.12) 100%);
-  border-color: var(--course-accent, var(--tier-color)) !important; box-shadow: var(--shadow-card-hover), 0 0 18px var(--course-glow, var(--tier-glow)) !important;
+  --cg-surface: #33333a;
+  border-color: var(--course-accent, var(--tier-color)) !important; box-shadow: var(--shadow-card-hover) !important;
   transform: translateY(-1px) !important;
 }
 .course-grade-summary-card.is-filtering {
-  --cg-surface: linear-gradient(155deg, rgba(255, 255, 255, 0.1) 0%, var(--card-bg) 52%, rgba(0, 0, 0, 0.08) 100%);
+  --cg-surface: #2e2e34;
   border-color: var(--course-accent, var(--tier-color)) !important;
-  box-shadow: 0 0 0 1px var(--course-accent, var(--tier-color)), 0 0 16px var(--course-glow, var(--tier-glow)) !important;
+  box-shadow: 0 0 0 1px var(--course-accent, var(--tier-color)) !important;
 }
 .cg-top-row { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 6px !important; }
 .cg-name { font-size: 11.5px !important; font-weight: 800 !important; letter-spacing: 0.3px !important; color: var(--text-primary) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; }
@@ -200,11 +199,11 @@
    it costs one 10px line now that the weight chips are gone. */
 .cg-course-name { font-size: 9.5px !important; font-weight: 500 !important; color: var(--text-tertiary) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; margin-top: -3px !important; }
 .cg-score-wrap { display: flex !important; align-items: center !important; gap: 5px !important; flex-shrink: 0 !important; }
-.cg-percent { font-size: 15px !important; font-weight: 800 !important; color: var(--tier-color) !important; font-family: ui-monospace, SFMono-Regular, monospace !important; letter-spacing: -0.5px !important; line-height: 1.1 !important; text-shadow: 0 0 14px var(--tier-glow) !important; }
+.cg-percent { font-size: 15px !important; font-weight: 800 !important; color: var(--tier-color) !important; font-family: ui-monospace, SFMono-Regular, monospace !important; letter-spacing: -0.5px !important; line-height: 1.1 !important; text-shadow: none !important; }
 .cg-percent.no-grade { color: var(--text-tertiary) !important; font-size: 10px !important; font-weight: 600 !important; text-shadow: none !important; letter-spacing: 0 !important; }
-.cg-letter { font-size: 8.5px !important; font-weight: 800 !important; color: var(--tier-color) !important; background: color-mix(in srgb, var(--tier-color) 18%, transparent) !important; border: 1px solid color-mix(in srgb, var(--tier-color) 55%, transparent) !important; border-radius: 999px !important; padding: 0 5px !important; line-height: 1.5 !important; }
-.cg-bar-bg { width: 100% !important; height: 4px !important; background: rgba(0, 0, 0, 0.32) !important; border-radius: 99px !important; overflow: hidden !important; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4) !important; }
-.cg-bar-fill { height: 100% !important; background: var(--course-accent, var(--tier-color)) !important; box-shadow: 0 0 8px var(--course-glow, var(--tier-glow)) !important; border-radius: 99px !important; transition: width 0.4s ease !important; }
+.cg-letter { font-size: 8.5px !important; font-weight: 800 !important; color: var(--tier-color) !important; background: color-mix(in srgb, var(--tier-color) 18%, transparent) !important; border: 1px solid color-mix(in srgb, var(--tier-color) 55%, transparent) !important; border-radius: 0; padding: 0 5px !important; line-height: 1.5 !important; }
+.cg-bar-bg { width: 100% !important; height: 4px !important; background: rgba(0, 0, 0, 0.32) !important; border-radius: 0; overflow: hidden !important; box-shadow: none !important; }
+.cg-bar-fill { height: 100% !important; background: var(--course-accent, var(--tier-color)) !important; box-shadow: none !important; border-radius: 0; transition: width 0.4s ease !important; }
 /* One need line, not two (the "on remaining" figure lives in the tooltip). */
 .course-grade-summary-card .cg-need-line { margin-top: 1px !important; font-size: 9.5px !important; font-weight: 600 !important; color: var(--text-secondary) !important; }
 
@@ -212,7 +211,7 @@
    this replaces a chip per weight, which was 43px of a 159px card (the tallest
    thing on it) and said nothing about the proportions. */
 .cg-weights { display: flex !important; flex-direction: column !important; gap: 3px !important; width: 100% !important; min-width: 0 !important; }
-.cg-weight-bar { width: 100% !important; height: 6px !important; border-radius: 99px !important; overflow: hidden !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important; }
+.cg-weight-bar { width: 100% !important; height: 6px !important; border-radius: 0; overflow: hidden !important; box-shadow: none !important; }
 .cg-weight-legend { font-size: 9px !important; font-weight: 600 !important; color: var(--text-tertiary) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; }
 /* display:block, not a bare inline span: overflow/text-overflow are ignored on
    inline boxes, so a long legend would silently spill instead of ellipsising. */
@@ -232,14 +231,14 @@
    plus the transparent select stretched over it, which is what makes the corner
    clickable at all. */
 .cg-weights { position: relative !important; }
-.cg-corner-picker { position: absolute !important; right: 0 !important; bottom: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 18px !important; height: 15px !important; border-radius: 5px !important; color: var(--text-tertiary) !important; opacity: 0.5 !important; transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease !important; }
+.cg-corner-picker { position: absolute !important; right: 0 !important; bottom: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 18px !important; height: 15px !important; border-radius: 0; color: var(--text-tertiary) !important; opacity: 0.5 !important; transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease !important; }
 .cg-corner-picker:hover { opacity: 1 !important; background: rgba(255, 255, 255, 0.08) !important; color: var(--text-primary) !important; }
 /* Keyboard users get the same affordance a mouse hover gives. */
 .cg-corner-picker:focus-within { opacity: 1 !important; background: rgba(255, 255, 255, 0.1) !important; color: var(--text-primary) !important; box-shadow: 0 0 0 1px var(--course-accent, var(--primary-accent)) !important; }
 .cg-corner-picker-glyph { font-size: 10px !important; line-height: 1 !important; pointer-events: none !important; }
 /* Stretched over the chip, fully transparent: the native dropdown and its
    keyboard handling come for free, none of the chrome shows. */
-.cg-corner-picker .gci-weight-select { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; border-radius: 5px !important; background: transparent !important; color: transparent !important; font-size: 9px !important; opacity: 0 !important; cursor: pointer !important; appearance: none !important; -webkit-appearance: none !important; }
+.cg-corner-picker .gci-weight-select { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; border-radius: 0; background: transparent !important; color: transparent !important; font-size: 9px !important; opacity: 0 !important; cursor: pointer !important; appearance: none !important; -webkit-appearance: none !important; }
 /* Native dropdown arrows would defeat the point. */
 .cg-corner-picker .gci-weight-select::-ms-expand { display: none !important; }
 /* Reserve the corner so the weight labels never run underneath it. Scoped to the
@@ -249,20 +248,20 @@
 
 .grades-heading-row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; margin: 12px 2px 8px !important; flex-wrap: wrap !important; }
 .grades-heading { font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.6px !important; text-transform: uppercase !important; color: var(--text-secondary) !important; }
-.grades-sort-toggle { display: flex !important; gap: 3px !important; background: rgba(0, 0, 0, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 999px !important; padding: 3px !important; }
-.grades-sort-btn { background: transparent !important; border: none !important; color: var(--text-tertiary) !important; font-size: 9.5px !important; font-weight: 700 !important; letter-spacing: 0.3px !important; text-transform: uppercase !important; padding: 5px 9px !important; border-radius: 999px !important; cursor: pointer !important; transition: all 0.18s ease !important; }
+.grades-sort-toggle { display: flex !important; gap: 3px !important; background: rgba(0, 0, 0, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 0; padding: 3px !important; }
+.grades-sort-btn { background: transparent !important; border: none !important; color: var(--text-tertiary) !important; font-size: 9.5px !important; font-weight: 700 !important; letter-spacing: 0.3px !important; text-transform: uppercase !important; padding: 5px 9px !important; border-radius: 0; cursor: pointer !important; transition: all 0.18s ease !important; }
 .grades-sort-btn:hover { color: var(--text-primary) !important; }
 .grades-sort-btn.active { background: var(--primary-accent) !important; color: #000000 !important; }
 
 .grade-card {
-  background: var(--card-bg) !important; backdrop-filter: blur(16px) saturate(160%) !important;
+  background: var(--card-bg) !important; 
   border: 1px solid rgba(255, 255, 255, 0.1) !important; border-left: 3px solid var(--course-accent, var(--tier-color)) !important;
-  box-shadow: var(--shadow-card) !important; border-radius: 16px !important; padding: 12px 15px !important;
+  box-shadow: var(--shadow-card) !important; border-radius: 0; padding: 12px 15px !important;
   display: flex !important; align-items: flex-start !important; gap: 10px !important; margin-bottom: 8px !important;
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.2s ease !important;
 }
-.grade-card:hover { background: rgba(255, 255, 255, 0.09) !important; transform: translateX(3px) translateY(-2px) !important; border-color: var(--course-accent, var(--tier-color)) !important; box-shadow: var(--shadow-card-hover), 0 0 16px var(--course-glow, var(--tier-glow)) !important; }
-.grade-check { flex-shrink: 0 !important; min-width: 25px !important; height: 25px !important; padding: 0 4px !important; border-radius: 999px !important; background: color-mix(in srgb, var(--tier-color) 22%, transparent) !important; color: var(--tier-color) !important; border: 1px solid var(--tier-color) !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 10.5px !important; font-weight: 800 !important; font-family: ui-monospace, SFMono-Regular, monospace !important; letter-spacing: -0.2px !important; margin-top: 1px !important; }
+.grade-card:hover { background: rgba(255, 255, 255, 0.09) !important; transform: translateX(3px) translateY(-2px) !important; border-color: var(--course-accent, var(--tier-color)) !important; box-shadow: var(--shadow-card-hover) !important; }
+.grade-check { flex-shrink: 0 !important; min-width: 25px !important; height: 25px !important; padding: 0 4px !important; border-radius: 0; background: color-mix(in srgb, var(--tier-color) 22%, transparent) !important; color: var(--tier-color) !important; border: 1px solid var(--tier-color) !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 10.5px !important; font-weight: 800 !important; font-family: ui-monospace, SFMono-Regular, monospace !important; letter-spacing: -0.2px !important; margin-top: 1px !important; }
 
 @keyframes gradeCardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .grade-card, .course-grade-summary-card, .whatif-row-card { animation: gradeCardIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both !important; }
@@ -273,4 +272,4 @@
 .grade-course { font-size: 11.5px !important; font-weight: 700 !important; color: var(--course-accent, var(--text-secondary)) !important; }
 .grade-date { font-size: 10.5px !important; font-weight: 600 !important; color: var(--text-tertiary) !important; }
 .grade-score { font-size: 12.5px !important; font-weight: 700 !important; color: var(--text-primary) !important; margin-top: 1px !important; display: flex !important; align-items: center !important; gap: 8px !important; }
-.grade-score-pct { font-size: 10.5px !important; font-weight: 800 !important; color: var(--tier-color) !important; background: color-mix(in srgb, var(--tier-color) 18%, transparent) !important; border: 1px solid var(--tier-color) !important; border-radius: 999px !important; padding: 1px 7px !important; font-family: ui-monospace, SFMono-Regular, monospace !important; }
+.grade-score-pct { font-size: 10.5px !important; font-weight: 800 !important; color: var(--tier-color) !important; background: color-mix(in srgb, var(--tier-color) 18%, transparent) !important; border: 1px solid var(--tier-color) !important; border-radius: 0; padding: 1px 7px !important; font-family: ui-monospace, SFMono-Regular, monospace !important; }

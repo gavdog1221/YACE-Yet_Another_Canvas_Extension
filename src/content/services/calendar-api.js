@@ -378,10 +378,6 @@ export function dominantKind(entries) {
   return { kind: best, alert };
 }
 
-export function isDayOffKind(kind) {
-  return kind === KIND_OFF || kind === KIND_SPECIAL;
-}
-
 // Days off on/after today, collapsed so a multi-day break is one row instead
 // of N. `kinds` filters which kinds count (the "Days off" vs "All key dates"
 // pills).

@@ -101,6 +101,6 @@ to `permissions` (and typically a new `background.js` handler for CORS).
 
 ## Stale docs
 
-`README.md` predates the fullscreen/kanban and registration work: it lists "5 tab renderers" but
+`README.md` predates the fullscreen and registration work: it lists "5 tab renderers" but
 the widget now has more tabs (`views/`: upcoming, grades, general, announcements, dining,
-registration, plus `kanban-view.js` for fullscreen). Trust the code, not the README.
+registration). Trust the code, not the README.

@@ -16,16 +16,16 @@
   margin: 8px 0 6px 0 !important;
   background: rgba(0, 0, 0, 0.18) !important;
   padding: 4px !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: none !important;
   position: relative !important;
   z-index: 3 !important;
 }
 .workload-day {
   display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: center !important;
   gap: 4px !important; min-width: 0 !important;
-  padding: 4px 5px !important; border-radius: 999px !important; cursor: pointer !important;
+  padding: 4px 5px !important; border-radius: 0; cursor: pointer !important;
   background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important;
   transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1) !important; user-select: none !important;
 }
@@ -43,10 +43,10 @@
 .workload-day.has-tasks { background: rgba(255, 255, 255, 0.08) !important; border-color: var(--accent-glow) !important; }
 .workload-day.has-tasks .day-name { color: #ffffff !important; }
 .workload-day.has-tasks .day-count { color: var(--primary-accent) !important; }
-.workload-day.has-urgent { border-color: rgba(255, 69, 58, 0.55) !important; background: linear-gradient(180deg, rgba(255, 69, 58, 0.06), rgba(255, 69, 58, 0.14)) !important; }
+.workload-day.has-urgent { border-color: rgba(255, 69, 58, 0.55) !important; background: rgba(255, 69, 58, 0.14) !important; }
 .workload-day.has-urgent .day-name { color: #ffb4ae !important; }
 .workload-day.has-urgent .day-count { color: var(--danger) !important; }
-.workload-day.active { background: var(--accent-soft) !important; border-color: var(--primary-accent) !important; box-shadow: 0 0 10px var(--accent-glow) !important; }
+.workload-day.active { background: var(--accent-soft) !important; border-color: var(--primary-accent) !important; box-shadow: none !important; }
 .workload-day.active .day-name, .workload-day.active .day-count { color: #ffffff !important; }
 
 /* ==========================================================================
@@ -59,24 +59,24 @@
 }.progress-meta { display: flex !important; justify-content: space-between !important; font-size: 11.5px !important; color: var(--text-secondary) !important; margin-bottom: 8px !important; font-weight: 600 !important; }
 .progress-meta span#progress-label { transition: color 0.3s ease !important; }
 .progress-bar-bg {
-  width: 100% !important; height: 10px !important; background: rgba(0, 0, 0, 0.28) !important; border-radius: 99px !important;
+  width: 100% !important; height: 10px !important; background: rgba(0, 0, 0, 0.28) !important; border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.12) !important; overflow: visible !important; position: relative !important;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: none !important;
 }
-.progress-bar-fill { height: 100% !important; width: 0%; border-radius: 99px !important; position: relative !important; overflow: hidden !important; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease, box-shadow 0.4s ease !important; }
-.progress-bar-fill.tier-low { background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent)) !important; box-shadow: 0 0 10px var(--accent-glow) !important; }
-.progress-bar-fill.tier-mid { background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent)) !important; box-shadow: 0 0 12px var(--accent-glow) !important; }
-.progress-bar-fill.tier-high { background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent)) !important; box-shadow: 0 0 12px var(--accent-glow) !important; }
-.progress-bar-fill.tier-complete { background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent)) !important; box-shadow: 0 0 16px var(--accent-glow) !important; }
+.progress-bar-fill { height: 100% !important; width: 0%; border-radius: 0; position: relative !important; overflow: hidden !important; transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease, box-shadow 0.4s ease !important; }
+.progress-bar-fill.tier-low { background: var(--primary-accent) !important; box-shadow: none !important; }
+.progress-bar-fill.tier-mid { background: var(--primary-accent) !important; box-shadow: none !important; }
+.progress-bar-fill.tier-high { background: var(--primary-accent) !important; box-shadow: none !important; }
+.progress-bar-fill.tier-complete { background: var(--primary-accent) !important; box-shadow: none !important; }
 .progress-bar-fill::after {
   content: "" !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent) !important;
-  animation: shimmerSweep 2.4s infinite linear !important;
+  background: none !important;
+  animation: none !important;
 }
 @keyframes shimmerSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
-.progress-container.is-all-done .progress-bar-bg { border-color: rgba(255, 255, 255, 0.3) !important; box-shadow: 0 0 16px var(--accent-glow) !important; animation: completePulse 2s infinite ease-in-out !important; }
+.progress-container.is-all-done .progress-bar-bg { border-color: rgba(255, 255, 255, 0.3) !important; box-shadow: none !important; animation: completePulse 2s infinite ease-in-out !important; }
 .progress-container.is-all-done #progress-label { color: var(--primary-accent) !important; }
-@keyframes completePulse { 0% { box-shadow: 0 0 8px var(--accent-glow); } 50% { box-shadow: 0 0 20px var(--accent-glow), 0 0 10px var(--accent-glow); } 100% { box-shadow: 0 0 8px var(--accent-glow); } }
+@keyframes completePulse { 0% { box-shadow: none; } 50% { box-shadow: none; } 100% { box-shadow: none; } }
 
 /* ==========================================================================
  *  CONSOLIDATED SEARCH BAR ROW (CLASS + SEARCH + SCOPE)
@@ -108,14 +108,14 @@
   align-items: center !important;
   gap: 4px !important;
   padding: 0 10px !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
   color: var(--text-primary) !important;
   font-size: 11px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
-  backdrop-filter: blur(12px) !important;
+  
   transition: all 0.2s ease !important;
 }
 .course-filter-btn:hover {
@@ -135,11 +135,11 @@
   left: 0 !important;
   min-width: 140px !important;
   background: rgba(22, 22, 28, 0.95) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  border-radius: 16px !important;
+  border-radius: 0;
   padding: 5px !important;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
   z-index: 10000 !important;
 }
 .course-filter-menu.open {
@@ -153,7 +153,7 @@
   align-items: center !important;
   justify-content: space-between !important;
   padding: 7px 9px !important;
-  border-radius: 10px !important;
+  border-radius: 0;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: var(--text-secondary) !important;
@@ -172,12 +172,12 @@
 .cf-dot {
   width: 6px !important;
   height: 6px !important;
-  border-radius: 50% !important;
+  border-radius: 0;
 }
 .cf-remove {
   font-size: 11px !important;
   padding: 1px 4px !important;
-  border-radius: 50% !important;
+  border-radius: 0;
   color: var(--text-tertiary) !important;
 }
 .cf-remove:hover {
@@ -202,12 +202,12 @@
   box-sizing: border-box !important;
   background: rgba(0, 0, 0, 0.22) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   color: var(--text-primary) !important;
   font-size: 12px !important;
   padding: 0 14px !important;
   outline: none !important;
-  backdrop-filter: blur(12px) !important;
+  
   transition: all 0.2s ease !important;
 }
 .search-input::placeholder { color: var(--text-tertiary) !important; }
@@ -235,7 +235,7 @@
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box !important;
-  border-radius: 50% !important;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.08) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
   color: var(--primary-accent) !important;
@@ -245,8 +245,8 @@
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  backdrop-filter: blur(12px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease !important;
   position: relative !important;
   z-index: 52 !important;
@@ -254,7 +254,7 @@
 .radial-horizon-wrap:hover .radial-horizon-trigger {
   transform: scale(1.1) !important;
   border-color: var(--primary-accent) !important;
-  box-shadow: 0 0 14px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 
 .radial-pie-menu {
@@ -265,11 +265,11 @@
   height: 140px !important;
   margin-top: -70px !important;
   margin-left: -70px !important;
-  border-radius: 50% !important;
+  border-radius: 50%;
   background: rgba(18, 18, 22, 0.94) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
   opacity: 0 !important;
   pointer-events: none !important;
   transform: scale(0.3) rotate(-30deg) !important;
@@ -329,27 +329,27 @@
   color: var(--primary-accent) !important;
 }
 .view-tabs {
-  display: flex !important; background: rgba(0, 0, 0, 0.22) !important; padding: 4px !important; border-radius: 16px !important;
+  display: flex !important; background: rgba(0, 0, 0, 0.22) !important; padding: 4px !important; border-radius: 0;
   margin-bottom: 12px !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; gap: 3px !important;
   position: relative !important; z-index: 3 !important;
 }
 .tab-btn {
   flex: 1 !important; background: transparent !important; border: none !important; color: var(--text-secondary) !important;
-  padding: 8px 0 !important; font-size: 11px !important; font-weight: 600 !important; border-radius: 12px !important;
+  padding: 8px 0 !important; font-size: 11px !important; font-weight: 600 !important; border-radius: 0;
   cursor: pointer !important; text-align: center !important; transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 .tab-btn:hover { color: #ffffff !important; }
-.tab-btn.active { background: rgba(255, 255, 255, 0.14) !important; color: #ffffff !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important; }
+.tab-btn.active { background: rgba(255, 255, 255, 0.14) !important; color: #ffffff !important; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important; }
 .tab-btn.overdue.active { color: #ffb4ae !important; background: rgba(255, 69, 58, 0.2) !important; }
 
 .tab-alert-pill {
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
   min-width: 15px !important; height: 15px !important; padding: 0 4px !important; margin-left: 3px !important;
-  border-radius: 999px !important; background: rgba(255, 69, 58, 0.28) !important; color: #ffd4d0 !important;
+  border-radius: 0; background: rgba(255, 69, 58, 0.28) !important; color: #ffd4d0 !important;
   border: 1px solid rgba(255, 69, 58, 0.55) !important; font-size: 9.5px !important; font-weight: 800 !important;
   animation: tabAlertPulse 2s infinite ease-in-out !important; vertical-align: middle !important;
 }
-@keyframes tabAlertPulse { 0% { box-shadow: 0 0 4px rgba(255, 69, 58, 0.35); } 50% { box-shadow: 0 0 12px rgba(255, 69, 58, 0.7); } 100% { box-shadow: 0 0 4px rgba(255, 69, 58, 0.35); } }
+@keyframes tabAlertPulse { 0% { box-shadow: none; } 50% { box-shadow: none; } 100% { box-shadow: none; } }
 /* ==========================================================================
  *  HUD COMMAND BAR (TRUE EQUAL-HEIGHT ZERO-OVERLAP DOCK)
  *  ========================================================================== */
@@ -360,7 +360,7 @@
   background: rgba(255, 255, 255, 0.06) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   padding: 4px 11px !important;
-  border-radius: 999px !important;
+  border-radius: 0;
 }
 /* Wrapper is transparent in the sidebar path so the chip renders as before. */
 .widget-date-center { display: contents !important; }
@@ -388,10 +388,10 @@
   justify-content: space-between !important;
   gap: 5px !important;
   background: rgba(0, 0, 0, 0.2) !important;
-  backdrop-filter: blur(14px) !important;
+  
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   padding: 4px 6px !important;
-  border-radius: 19px !important;
+  border-radius: 0;
   margin-bottom: 8px !important;
   position: relative !important;
   z-index: 10 !important;
@@ -423,7 +423,7 @@
   font-weight: 700 !important;
   letter-spacing: -0.1px !important;
   padding: 0 2px !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   cursor: pointer !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -442,11 +442,11 @@
   background: var(--accent-soft) !important;
   border-color: var(--primary-accent) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 10px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 
-.hud-tab-badge { background: #ff453a !important; color: #000000 !important; font-size: 8.5px !important; font-weight: 900 !important; padding: 1px 3px !important; border-radius: 99px !important; line-height: 1 !important; }
-.hud-tab-badge.announce-dot { background: var(--primary-accent) !important; box-shadow: 0 0 6px var(--accent-glow) !important; width: 5px !important; height: 5px !important; padding: 0 !important; }
+.hud-tab-badge { background: #ff453a !important; color: #000000 !important; font-size: 8.5px !important; font-weight: 900 !important; padding: 1px 3px !important; border-radius: 0; line-height: 1 !important; }
+.hud-tab-badge.announce-dot { background: var(--primary-accent) !important; box-shadow: none !important; width: 5px !important; height: 5px !important; padding: 0 !important; }
 
 .hud-add-btn {
   height: 28px !important;
@@ -461,7 +461,7 @@
   font-size: 11px !important;
   font-weight: 700 !important;
   padding: 0 9px !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   cursor: pointer !important;
   line-height: 1 !important;
   flex-shrink: 0 !important;
@@ -470,7 +470,7 @@
 .hud-add-btn:hover {
   background: var(--primary-accent) !important;
   color: #000000 !important;
-  box-shadow: 0 0 12px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 .hud-add-btn .plus-icon {
   font-weight: 900 !important;
@@ -542,7 +542,7 @@
   justify-content: center !important;
   background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 999px !important;
+  border-radius: 0;
   padding: 5px 3px !important;
   cursor: pointer !important;
   overflow: hidden !important;
@@ -575,7 +575,7 @@
   color: var(--text-tertiary) !important;
   margin-left: 2px !important;
   padding: 1px 3px !important;
-  border-radius: 50% !important;
+  border-radius: 0;
   flex-shrink: 0 !important;
 }
 
@@ -583,7 +583,7 @@
   flex: 2 1 0% !important;
   background: rgba(255, 255, 255, 0.14) !important;
   border-color: var(--course-accent, rgba(255, 255, 255, 0.3)) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
 }
 
 .filter-pill.all-pill:hover {
@@ -601,7 +601,7 @@
 .filter-pill.active {
   background: var(--accent-soft) !important;
   border-color: var(--primary-accent) !important;
-  box-shadow: 0 0 10px var(--accent-glow) !important;
+  box-shadow: none !important;
 }
 
 .filter-pill.active .pill-label {

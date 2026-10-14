@@ -101,7 +101,6 @@ css/                       Dashboard widget styles, split by feature (content sc
 ├── view-grades.css        Grades tab (GPA, What-If matrix, course cards)
 ├── view-dining.css        Dining tab (menus, dinner-plate pie, dietary badges)
 ├── view-schedule.css      Schedule panel (weekly timetable of current Canvas courses)
-├── view-kanban.css        Kanban board
 ├── fullscreen.css         Fullscreen dashboard grid, panels, responsive fallbacks
 └── registration.css       WebCat autofill styles (separate content script)
 src/content/              ── dashboard bundle ──
@@ -120,14 +119,12 @@ src/content/              ── dashboard bundle ──
 │   ├── upcoming-view.js  Main task list; also renderCurrentView() dispatcher
 │   ├── dashboard-view.js Mini grades/news panels on the home screen
 │   ├── grades-view.js    Full grades + What-If matrix
-│   ├── recent-grades-view.js
 │   ├── general-view.js   Syllabus/Info (grade weights, office hours)
 │   ├── announcements-view.js
 │   ├── dining-view.js    Menus, hall status, station filters
 │   ├── rmp-view.js       Rate My Professors
 │   ├── registration-view.js  WebCat term/RAC/CRN editor
-│   ├── building-hours-view.js Building Hours cards
-│   └── kanban-view.js    Fullscreen kanban board
+│   └── building-hours-view.js Building Hours cards
 ├── services/             Data access / parsing
 │   ├── canvas-api.js     Canvas REST + CSRF headers, Gradescope fetch
 │   ├── task-loader.js    Orchestrates task loading, dedup, custom merge
