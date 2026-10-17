@@ -635,7 +635,7 @@ function bgJoinChunks(chunks) {
 // fallback variants race with a short deadline. A hop-level cache keyed by
 // hall+day keeps repeat calls (view re-renders, day toggles, re-opens) off the
 // slow site entirely.
-const DINING_MENU_PRIMARY_MS = 8000;
+const DINING_MENU_PRIMARY_MS = 5000;
 const DINING_MENU_FALLBACK_MS = 2000;
 const DINING_MENU_CACHE_MS = 20 * 60 * 1000;
 const diningMenuCache = new Map(); // key: locationNum::dtdate -> { t, html }
@@ -747,15 +747,22 @@ browser.runtime.onMessage.addListener((request) => {
             // FoodPro's shortmenu.asp is slow and can hang. Previously each of
             // four URL variants was tried sequentially with a 4s abort — worst
             // case ~16s per hall when the server stalled. Now the primary
-            // (https + dtdate) gets one generous attempt, and only failures
-            // race the remaining variants in parallel with a short deadline.
+            // (https + dtdate) gets one attempt, and only failures race the
+            // remaining variants in parallel with a short deadline.
             const base = 'shortmenu.asp?sName=University+Of+New+Hampshire+Hospitality+Services&locationNum=' + locationNum + '&locationName=' + cleanLocName;
             const variants = [
                 'https://foodpro.unh.edu/' + base + '&dtdate=' + encodeURIComponent(dtdate),
-                'https://foodpro.unh.edu/' + base,
-                'http://foodpro.unh.edu/' + base + '&dtdate=' + encodeURIComponent(dtdate),
-                'http://foodpro.unh.edu/' + base
+                'http://foodpro.unh.edu/' + base + '&dtdate=' + encodeURIComponent(dtdate)
             ];
+            // A request with no dtdate always serves TODAY's menu, so it is only
+            // a valid fallback for today — using it for a tomorrow peek would
+            // silently label today's food as tomorrow's.
+            const todayObj = new Date();
+            const dtdateIsToday = dtdate === `${todayObj.getMonth() + 1}/${todayObj.getDate()}/${todayObj.getFullYear()}`;
+            if (dtdateIsToday) {
+                variants.push('https://foodpro.unh.edu/' + base);
+                variants.push('http://foodpro.unh.edu/' + base);
+            }
 
             const grab = async (url, ms) => {
                 try {

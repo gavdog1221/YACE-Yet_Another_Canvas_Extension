@@ -5,56 +5,48 @@
  *  do not reformat bodies. See manifest.json `content_scripts.css` for order.
  *  ========================================================================== */
 /* ==========================================================================
- *  DINING / FOOD TAB (3-COLUMN EQUAL GRID & RETRO CONTROLS)
- *  ========================================================================== */
+ *  DINING / FOOD TAB — retro beveled hall/day pills + station toolbar
+ * ========================================================================== */
 .dining-header-controls {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 12px !important;
+  justify-content: flex-start !important;
+  margin-bottom: 10px !important;
   position: relative !important;
   z-index: 3 !important;
 }
 
-.dining-hall-pills {
-  display: flex !important;
-  gap: 4px !important;
-  background: rgba(0, 0, 0, 0.28) !important;
-  padding: 3px !important;
-  border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-}
-
-/* Hall switch + Today/Tomorrow toggle share one left-hand cluster so the
-   pie wheel stays anchored to the right edge of the header row. */
 .dining-left-controls {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
 }
 
+.dining-hall-pills,
 .dining-day-pills {
   display: flex !important;
-  gap: 4px !important;
+  gap: 3px !important;
   background: rgba(0, 0, 0, 0.28) !important;
   padding: 3px !important;
   border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid #000000 !important;
 }
 
 .dining-pill {
-  background: transparent !important;
-  border: 1px solid transparent !important;
+  background: #3a3a42 !important;
+  border: 1px solid #000000 !important;
   color: var(--text-secondary) !important;
   font-size: 11px !important;
   font-weight: 700 !important;
-  padding: 5px 13px !important;
+  padding: 4px 12px !important;
   border-radius: 0;
   cursor: pointer !important;
-  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  box-shadow: inset 1px 1px 0 #7a7a84, inset -1px -1px 0 #17171b !important;
+  transition: background 0.12s ease !important;
 }
 
 .dining-pill:hover {
+  background: #47474f !important;
   color: #ffffff !important;
 }
 
@@ -62,189 +54,51 @@
   background: var(--accent-soft) !important;
   color: var(--primary-accent) !important;
   border-color: var(--primary-accent) !important;
-  box-shadow: none !important;
+  box-shadow: inset 1px 1px 0 #17171b, inset -1px -1px 0 #6a6a73 !important;
 }
 
 /* ==========================================================================
- *  DINING DINNER-PLATE RADIAL PIE MENU
- *  ========================================================================== */
-.dining-header-controls {
-  position: relative !important;
-  z-index: 1000 !important;
-}
-.dining-header-controls:has(.dining-station-pie-wrap:hover) {
-  z-index: 99999 !important;
-}
-
-.dining-station-pie-wrap {
-  position: relative !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  z-index: 99999 !important;
+ *  STATION TOOLBAR (replaces the old radial dinner-plate picker)
+ *  A plain wrapping row of beveled buttons: Main / All / one per station.
+ * ========================================================================== */
+.dining-station-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  margin-bottom: 10px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-.dining-pie-trigger {
-  height: 28px !important;
-  box-sizing: border-box !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1.2px solid rgba(255, 255, 255, 0.18) !important;
-  color: var(--text-primary) !important;
-  padding: 0 11px !important;
+.dining-station-btn {
+  background: #3a3a42 !important;
+  border: 1px solid #000000 !important;
+  color: var(--text-secondary) !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  padding: 3px 9px !important;
   border-radius: 0;
   cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
-  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  box-shadow: inset 1px 1px 0 #7a7a84, inset -1px -1px 0 #17171b !important;
+  transition: background 0.12s ease !important;
 }
 
-.dining-station-pie-wrap:hover .dining-pie-trigger {
-  border-color: var(--primary-accent) !important;
-  box-shadow: none !important;
+.dining-station-btn:hover {
+  background: #47474f !important;
   color: #ffffff !important;
 }
 
-.pie-trigger-caret {
-  font-size: 8.5px !important;
+.dining-station-btn.active {
+  background: var(--accent-soft) !important;
   color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  box-shadow: inset 1px 1px 0 #17171b, inset -1px -1px 0 #6a6a73 !important;
 }
 
 /* ==========================================================================
- *  REALISTIC CERAMIC DINNER-PLATE RADIAL MENU
- *  ========================================================================== */
-.dining-radial-menu {
-  position: absolute !important;
-  top: 50% !important;
-  right: -14px !important;
-  width: 280px !important;
-  height: 280px !important;
-  margin-top: -140px !important;
-  border-radius: 50%;
-
-  /* 3D Plate Structure: Rim Highlight, Outer Slant, Recessed Inner Dish Well */
-  background:
-  radial-gradient(circle at 45% 42%, #ffffff 0%, #f4f5f7 38%, #e2e4e8 64%, #c7cbd3 75%, #ffffff 82%, #dfe2e8 100%) !important;
-
-  /* Sculpted Ceramic Rim Highlights & Cast Drop Shadows */
-  border: 4px solid #ffffff !important;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
-
-  opacity: 0 !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
-  transform: scale(0.3) rotate(-20deg) !important;
-
-  /* Reverse close animation: keeps visibility active for the entire 0.25s shrink/spin duration */
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-  opacity 0.22s ease,
-  visibility 0s linear 0.25s !important;
-  overflow: hidden !important;
-  z-index: 100000 !important;
-}
-
-/* Forward open animation: visibility becomes visible immediately with 0s delay */
-.dining-station-pie-wrap:not(.is-closed) .dining-pie-trigger:hover + .dining-radial-menu,
-.dining-station-pie-wrap:not(.is-closed) .dining-radial-menu:hover {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  transform: scale(1) rotate(0deg) !important;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-  opacity 0.2s ease,
-  visibility 0s linear 0s !important;
-}/* Center Rim Inset Groove (Simulates ceramic depression) */
-.dining-radial-menu::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 38px !important;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
-  pointer-events: none !important;
-  z-index: 15 !important;
-}
-
-/* Center Plate Hub / Embossed Silver Cutlery */
-.dining-plate-center-hub {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  width: 58px !important;
-  height: 58px !important;
-  margin-top: -29px !important;
-  margin-left: -29px !important;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #ffffff, #eceff3 70%, #d8dbe2) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  pointer-events: none !important;
-  z-index: 25 !important;
-}
-
-.dining-plate-center-hub span {
-  font-size: 24px !important;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25)) !important;
-}
-
-/* Clear Segment Dividers */
-.dining-pie-slice {
-  position: absolute !important;
-  top: 0 !important;
-  right: 0 !important;
-  width: 50% !important;
-  height: 50% !important;
-  transform-origin: 0% 100% !important;
-  transform: rotate(var(--slice-rot)) skewY(calc(var(--slice-skew) * -1)) !important;
-  background: transparent !important;
-  border: none !important;
-  border-left: 1px solid rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5) !important;
-  cursor: pointer !important;
-  padding: 0 !important;
-  z-index: 10 !important;
-  transition: background 0.15s ease !important;
-}
-
-.dining-pie-slice:hover {
-  background: var(--accent-soft) !important;
-}
-
-.dining-pie-slice.active {
-  background: var(--accent-glow) !important;
-}
-
-/* Legible Text on White Ceramic */
-.dining-plate-label {
-  position: absolute !important;
-  transform: translate(-50%, -50%) !important;
-  font-size: 10.5px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.1px !important;
-  color: #24292f !important;
-  text-shadow: none !important;
-  white-space: nowrap !important;
-  cursor: pointer !important;
-  pointer-events: auto !important;
-  z-index: 20 !important;
-  transition: color 0.15s ease, transform 0.15s ease !important;
-}
-
-.dining-plate-label:hover {
-  color: var(--primary-accent) !important;
-  transform: translate(-50%, -50%) scale(1.18) !important;
-}
-
-.dining-plate-label.active {
-  color: var(--primary-accent) !important;
-  font-weight: 900 !important;
-}/* Vertical Stack for Horizontal Meal Rows */
+ *  MEAL ROWS
+ * ========================================================================== */
 .dining-rows-stack {
   display: flex !important;
   flex-direction: column !important;
@@ -257,7 +111,6 @@
 .dining-meal-row {
   width: 100% !important;
   background: rgba(255, 255, 255, 0.04) !important;
-  
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-left: 3px solid var(--primary-accent) !important;
   border-radius: 0;
@@ -272,14 +125,14 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   padding-bottom: 6px !important;
 }
 
 .dining-meal-name {
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  letter-spacing: 0.5px !important;
+  letter-spacing: 0.4px !important;
   color: var(--primary-accent) !important;
   text-transform: uppercase !important;
 }
@@ -288,42 +141,6 @@
   font-size: 10.5px !important;
   font-weight: 600 !important;
   color: var(--text-tertiary) !important;
-}
-
-/* Clear bullet point styling */
-.dining-item-list {
-  margin: 4px 0 0 0 !important;
-  padding-left: 18px !important;
-  list-style-type: disc !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 5px !important;
-}
-
-.dining-item-list li {
-  display: list-item !important;
-  font-size: 12px !important;
-  line-height: 1.4 !important;
-  color: var(--text-primary) !important;
-}
-
-.dining-item-list li::marker {
-  color: var(--primary-accent) !important;
-  font-size: 11px !important;
-}
-.dining-meal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  padding-bottom: 4px !important;
-  margin-bottom: 2px !important;
-  text-align: center !important;
-}
-
-.dining-meal-name {
-  font-size: 10.5px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.4px !important;
-  color: var(--primary-accent) !important;
-  text-transform: uppercase !important;
 }
 
 .dining-stations-wrap {
@@ -351,16 +168,31 @@
 
 .dining-item-list {
   margin: 0 !important;
-  padding-left: 10px !important;
-  color: var(--text-primary) !important;
-  font-size: 10.5px !important;
-  line-height: 1.35 !important;
-  list-style-type: disc !important;
+  padding: 0 !important;
+  list-style: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
 }
 
 .dining-item-list li {
-  margin-bottom: 3px !important;
-  word-break: break-word !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+  font-size: 10.5px !important;
+  line-height: 1.35 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Retro square bullet, drawn as a flex item so dietary badges stay pinned to
+   the right edge instead of wrapping under the dish name. */
+.dining-item-list li::before {
+  content: "\25AA" !important;
+  flex: 0 0 auto !important;
+  color: var(--primary-accent) !important;
+  font-size: 8px !important;
+  line-height: 1.7 !important;
 }
 
 .dining-empty-sub {
@@ -373,7 +205,7 @@
 
 /* ==========================================================================
  *  DINING HOURS STATUS BANNER & DIETARY BADGES
- *  ========================================================================== */
+ * ========================================================================== */
 .dining-status-banner {
   display: inline-flex !important;
   align-items: center !important;
@@ -413,13 +245,6 @@
 }
 
 /* Dish Item Row with Dietary Badges */
-.dining-item-list li {
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  gap: 4px !important;
-}
-
 .dish-name-text {
   flex: 1 1 auto !important;
   word-break: break-word !important;
@@ -445,24 +270,9 @@
   font-family: ui-monospace, SFMono-Regular, monospace !important;
 }
 
-.diet-dot.vgn {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-}
-
-.diet-dot.veg {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-}
-
-.diet-dot.gf {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-}
-
+.diet-dot.vgn,
+.diet-dot.veg,
+.diet-dot.gf,
 .diet-dot.halal {
   background: rgba(255, 255, 255, 0.1) !important;
   color: var(--text-secondary) !important;

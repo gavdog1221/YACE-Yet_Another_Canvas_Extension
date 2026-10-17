@@ -221,14 +221,24 @@ export async function getDiningHallStatus(hallNum, meals) {
     }
   }
 
-// --- Per-day menu caching (in-memory + localStorage) ---
-// FoodPro is slow, so menus are fetched once per day, deduped across
+// --- Per-hall, per-day menu caching (in-memory + localStorage) ---
+// FoodPro is slow, so a hall's menu is fetched once per day, deduped across
 // concurrent callers, cached in state.diningByDateCache, and mirrored to
 // localStorage (STORAGE_KEY_DINING_MENUS). Returning to Canvas within the same
 // today/tomorrow span never re-hits the slow site; only those two days are
 // ever persisted/restored — anything older is stale by definition.
+//
+// Caching per hall (not per day) is what makes the view feel fast: the hall the
+// user is looking at paints the moment ITS request lands instead of waiting on
+// the slower of the two halls. Each hall carries its own status
+// ('pending' | 'ok' | 'empty' | 'error') so one bad hall never blocks or
+// mislabels the other.
 
-const pendingDiningFetch = {};
+const pendingDiningHallFetch = {}; // key: dateString::hallNum -> in-flight Promise
+
+function emptyDiningDay(key) {
+    return { date: key, 80: [], 30: [], status: { 80: 'pending', 30: 'pending' } };
+  }
 
 function loadDiningPersistence() {
     if (loadDiningPersistence.loaded) return;
@@ -247,13 +257,21 @@ function loadDiningPersistence() {
 
       Object.keys(days).forEach(k => {
         if (!validKeys.has(k)) return;
-        const day = days[k];
-        // A persisted day with an EMPTY hall is usually a partial fetch
-        // failure (one hall worked, the other didn't) — restore only days
-        // where BOTH halls have content, so the missing hall refetches.
-        if (day && Array.isArray(day[80]) && Array.isArray(day[30]) && day[80].length > 0 && day[30].length > 0) {
-          state.diningByDateCache[k] = { date: k, 80: day[80], 30: day[30] };
-        }
+        const saved = days[k];
+        if (!saved) return;
+        // Restore each hall independently. A hall saved with items is served
+        // from cache; a hall that failed last session was persisted empty (or
+        // not at all), so it refetches now rather than freezing an empty menu.
+        const day = emptyDiningDay(k);
+        let hasAny = false;
+        [80, 30].forEach(hall => {
+          if (Array.isArray(saved[hall]) && saved[hall].length > 0) {
+            day[hall] = saved[hall];
+            day.status[hall] = 'ok';
+            hasAny = true;
+          }
+        });
+        if (hasAny) state.diningByDateCache[k] = day;
       });
       const todayKey = now.toDateString();
       if (state.diningByDateCache[todayKey]) {
@@ -272,13 +290,18 @@ function persistDiningMenus() {
       const days = {};
       [now.toDateString(), tomorrow.toDateString()].forEach(k => {
         const day = state.diningByDateCache[k];
-        // Persist only days where BOTH halls have content. An all-empty day
-        // (or a partial one) is usually a fetch failure that must not be
-        // frozen into the cache — status/failed metadata is never persisted
-        // (it describes a session), and the missing hall refetches next load.
-        if (day && day[80] && day[80].length && day[30] && day[30].length) {
-          days[k] = { date: k, 80: day[80], 30: day[30] };
-        }
+        if (!day) return;
+        // Persist only halls that actually returned items. An empty hall is
+        // usually a fetch failure that must not be frozen into the cache —
+        // status metadata is never persisted (it describes a session), and the
+        // missing hall refetches next load. Both keys are always written so the
+        // stored shape stays `{ date, 80, 30 }`.
+        const entry = { date: k, 80: [], 30: [] };
+        let hasAny = false;
+        [80, 30].forEach(hall => {
+          if (day[hall] && day[hall].length) { entry[hall] = day[hall]; hasAny = true; }
+        });
+        if (hasAny) days[k] = entry;
       });
       if (Object.keys(days).length) {
         localStorage.setItem(STORAGE_KEY_DINING_MENUS, JSON.stringify({ days }));
@@ -288,81 +311,82 @@ function persistDiningMenus() {
     }
   }
 
-// Failed days are kept for one retry window so repeated interaction with a
+// Failed halls are kept for one retry window so repeated interaction with a
 // down FoodPro doesn't hammer it on every click; after it elapses (or on an
 // explicit retry) the next call refetches, so menus recover without reloading
-// the page. The window is short because the tab now renders once per session
-// and is then kept alive by campus-tools-modal's toolHosts map — the click that
-// follows a failure is the thing being rate-limited here.
+// the page. The window is short because the tab renders once per session and is
+// then kept alive by campus-tools-modal's toolHosts map — the click that follows
+// a failure is the thing being rate-limited here.
 const DINING_RETRY_WINDOW_MS = 60 * 1000;
-const diningFetchFailedAt = {}; // key -> timestamp of the last failed attempt
+const diningHallFetchFailedAt = {}; // key: dateString::hallNum -> last failure ms
 
-// Fetch (or serve from cache) the menu day for both dining halls. Concurrent
-// callers for the same day share one in-flight request, so the view's
-// today+tomorrow prefetch and an early day toggle never double-fetch. A failed
-// fetch is cached in-memory only (rate-limited by DINING_RETRY_WINDOW_MS) and
-// never written to localStorage, so the session and the next session recover.
-// Day objects carry per-hall status: 'ok' (parseable menu), 'empty' (server
-// answered but posted nothing), or 'error' (unreachable/timeout).
-export async function ensureDiningMenusForDate(dateObj, opts) {
+// Fetch (or serve from cache) ONE hall's menu for ONE day. Concurrent callers
+// for the same hall+day share a single in-flight request, so a view prefetch and
+// an immediate hall/day toggle never double-fetch. A failed fetch is cached
+// in-memory only (rate-limited by DINING_RETRY_WINDOW_MS) and never written to
+// localStorage, so the session and the next session recover. Resolves as soon as
+// that hall lands, which is what lets the view stream the visible hall first.
+export async function ensureDiningHallForDate(hallNum, dateObj, opts) {
     const force = !!(opts && opts.force);
     loadDiningPersistence();
 
     const key = dateObj.toDateString();
     const todayKey = new Date().toDateString();
+    const hallKey = key + '::' + hallNum;
 
-    const cached = state.diningByDateCache[key];
-    if (cached && Array.isArray(cached[80]) && Array.isArray(cached[30])) {
-      if (key === todayKey) state.diningCache = cached;
-      if (!cached.failed) return cached;
-      if (!force) {
-        const elapsed = Date.now() - (diningFetchFailedAt[key] || 0);
-        if (elapsed < DINING_RETRY_WINDOW_MS) return cached;
-      }
-      // Manual retry, or the retry window elapsed: drop the stale failure and
-      // try again so a recovering FoodPro is picked up without a reload.
-      delete state.diningByDateCache[key];
-      if (key === todayKey) state.diningCache = null;
+    let day = state.diningByDateCache[key];
+    if (!day) {
+      day = emptyDiningDay(key);
+      state.diningByDateCache[key] = day;
     }
-    if (pendingDiningFetch[key]) return pendingDiningFetch[key];
+    if (key === todayKey) state.diningCache = day;
+
+    const cachedStatus = day.status[hallNum];
+    const meals = Array.isArray(day[hallNum]) ? day[hallNum] : [];
+
+    // Serve a completed result straight from cache. Errors are held for the
+    // retry window; 'empty' (server answered, nothing posted) is terminal for
+    // the session so we don't re-hit FoodPro on every re-render.
+    if (!force) {
+      if (cachedStatus === 'ok') return { meals, status: 'ok' };
+      if (cachedStatus === 'empty') return { meals: [], status: 'empty' };
+      if (cachedStatus === 'error') {
+        const elapsed = Date.now() - (diningHallFetchFailedAt[hallKey] || 0);
+        if (elapsed < DINING_RETRY_WINDOW_MS) return { meals, status: 'error' };
+      }
+    }
+
+    if (pendingDiningHallFetch[hallKey]) return pendingDiningHallFetch[hallKey];
 
     const dtdate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`;
-    pendingDiningFetch[key] = (async () => {
-      const day = { date: key, 80: [], 30: [], failed: true, status: { 80: 'error', 30: 'error' } };
-      const setHall = (hallNum, res, prop) => {
+    const locationName = hallNum === 80 ? 'Holloway Commons' : 'Philbrook';
+    const pending = (async () => {
+      let status = 'error';
+      try {
+        const res = await browser.runtime.sendMessage({
+          type: 'FETCH_DINING_MENU', locationNum: hallNum, locationName, dtdate
+        }).catch(() => null);
         if (res && res.success && res.html) {
-          day[prop] = parseMenuHtml(res.html);
-          day.status[hallNum] = 'ok';
+          day[hallNum] = parseMenuHtml(res.html);
+          status = 'ok';
         } else if (res && !res.success && res.network === false) {
           // FoodPro answered (404/no-content): genuinely nothing posted.
-          day.status[hallNum] = 'empty';
+          status = 'empty';
         } else {
-          day.status[hallNum] = 'error';
-        }
-      };
-      try {
-        const [hocoRes, phillyRes] = await Promise.all([
-          browser.runtime.sendMessage({ type: 'FETCH_DINING_MENU', locationNum: 80, locationName: 'Holloway Commons', dtdate }).catch(() => null),
-          browser.runtime.sendMessage({ type: 'FETCH_DINING_MENU', locationNum: 30, locationName: 'Philbrook', dtdate }).catch(() => null)
-        ]);
-        setHall(80, hocoRes, 80);
-        setHall(30, phillyRes, 30);
-        // Diagnostic breadcrumb: when a hall comes back empty/errored, log the
-        // per-hall background verdict so a stuck hall is traceable in console.
-        if (day.status[80] !== 'ok' || day.status[30] !== 'ok') {
-          console.info('[YACE] dining ' + key + ' status ' + JSON.stringify(day.status),
-            '| hoco', hocoRes ? (hocoRes.success ? 'ok' : 'net:' + hocoRes.network) : 'msg-fail',
-            '| philly', phillyRes ? (phillyRes.success ? 'ok' : 'net:' + phillyRes.network) : 'msg-fail');
+          status = 'error';
         }
       } catch (err) {
         console.warn('[YACE] Dining fetch failure:', err);
       }
-      day.failed = day.status[80] === 'error' || day.status[30] === 'error';
-      if (day.failed) diningFetchFailedAt[key] = Date.now();
-      state.diningByDateCache[key] = day;
+      if (!Array.isArray(day[hallNum])) day[hallNum] = [];
+      day.status[hallNum] = status;
+      if (status === 'error') diningHallFetchFailedAt[hallKey] = Date.now();
       if (key === todayKey) state.diningCache = day;
       persistDiningMenus();
-      return day;
+      // Diagnostic breadcrumb so a stuck hall is traceable in console.
+      if (status !== 'ok') console.info('[YACE] dining ' + hallKey + ' -> ' + status);
+      return { meals: day[hallNum], status };
     })();
-    return pendingDiningFetch[key].finally(() => { delete pendingDiningFetch[key]; });
+    pendingDiningHallFetch[hallKey] = pending;
+    return pending.finally(() => { delete pendingDiningHallFetch[hallKey]; });
   }

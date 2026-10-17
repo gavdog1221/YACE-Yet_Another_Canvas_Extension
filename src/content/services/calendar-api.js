@@ -270,7 +270,7 @@ const CALENDAR_RETRY_WINDOW_MS = 5 * 60 * 1000;
 let calendarFetchFailedAt = 0;
 
 // One in-flight request shared by every concurrent caller, mirroring
-// dining-api's pendingDiningFetch. Cleared on settle.
+// dining-api's pendingDiningHallFetch. Cleared on settle.
 let pendingCalendarFetch = null;
 
 // Resolve the best available copy without touching the network: a previously
