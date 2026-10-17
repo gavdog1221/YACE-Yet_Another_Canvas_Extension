@@ -199,6 +199,40 @@ export async function refreshAnnouncementsOnly() {
     }
   }
 
+// Assignments can carry MULTIPLE due dates — "Assign to: Everyone" on the
+// regular date plus an override row (section / group / individual) on a later
+// one, which is the de-facto "late" deadline. The plain `due_at` field only
+// ever shows ONE of them, so collect every due_at Canvas knows about
+// (all_dates + overrides) and keep the latest as the task's lateDate.
+// effectiveDueDate() then swaps to it once the regular date passes, which
+// keeps the task in the Due tab instead of shunting it to Overdue while the
+// late window is still open. Returns { dueDate, lateDate }.
+function extractAssignmentDates(a, parsedDueDate) {
+    const dueTimes = [];
+    [a.all_dates, a.overrides].forEach(src => {
+      if (!Array.isArray(src)) return;
+      src.forEach(d => {
+        if (!d || !d.due_at) return;
+        const t = new Date(d.due_at).getTime();
+        if (!isNaN(t)) dueTimes.push(t);
+      });
+    });
+
+    const base = a.due_at ? new Date(a.due_at) : parsedDueDate;
+    if (!dueTimes.length) return { dueDate: base, lateDate: null };
+
+    const latest = Math.max(...dueTimes);
+    if (!base) {
+      // No base date at all — every date came from overrides, so the
+      // earliest one is the "regular" due date and the latest is the late one.
+      return { dueDate: new Date(Math.min(...dueTimes)), lateDate: new Date(latest) };
+    }
+    return {
+      dueDate: base,
+      lateDate: latest > base.getTime() ? new Date(latest) : null
+    };
+  }
+
 export async function loadTasks(showLoadingUI = true, opts = {}) {
     // The dashboard is NEVER torn down for a scan: the first render always
     // mounts it (dock + panels), so the "⇱ All" pill and the tab pills stay
@@ -457,11 +491,14 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
 
         // 2. Full Assignments Tab Scan with Submission Status
         try {
-          const assignments = await fetchAllPages(`${origin}/api/v1/courses/${course.id}/assignments?include[]=submission&per_page=100&order_by=due_at`, headers, 5);
+          // include[]=all_dates pulls EVERY due date the assignment has
+          // (base + per-section/group overrides), not just the one `due_at`
+          // shows — that's where a separate late deadline lives.
+          const assignments = await fetchAllPages(`${origin}/api/v1/courses/${course.id}/assignments?include[]=submission&include[]=all_dates&per_page=100&order_by=due_at`, headers, 5);
           if (Array.isArray(assignments)) {
               for (const a of assignments) {
                 const parsed = parseAndCleanTitle(a.name, courseKey);
-                const dueDate = a.due_at ? new Date(a.due_at) : parsed.dueDate;
+                const { dueDate, lateDate } = extractAssignmentDates(a, parsed.dueDate);
                 const isHwLike = homeworkFolderPattern.test(a.name) || (a.submission_types && !a.submission_types.includes('none'));
                 const isSubmitted = !!(a.submission && (a.submission.submitted_at || a.submission.workflow_state === 'submitted'));
 
@@ -494,6 +531,7 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
                                                          title: parsed.title,
                                                          url: a.html_url,
                                                          dueDate: dueDate,
+                                                         lateDate: lateDate,
                                                          points: a.points_possible ?? null,
                                                          isUndatedHw: !dueDate,
                                                          gradescope: /grade\w*scope/i.test(a.description || '') || /grade\w*scope/i.test(a.name),

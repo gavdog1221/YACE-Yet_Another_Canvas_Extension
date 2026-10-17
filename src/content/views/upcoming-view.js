@@ -234,8 +234,19 @@ export function createTaskCard(task, now, completedMap) {
     const card = document.createElement('div');
 
     const hasRealDueDate = !!task.dueDate;
-    const dueDate = task.dueDate || task.customDueDate || null;
+    // effectiveDueDate rolls a task onto its LATE deadline once the regular
+    // one has passed, so the card shows (and counts down to) the date that is
+    // actually still actionable instead of an already-passed regular one.
+    const dueDate = effectiveDueDate(task, now) || null;
     const isCustomDate = !hasRealDueDate && !!task.customDueDate;
+    // True while the displayed date IS the rolled-over late deadline, so the
+    // label can say so instead of looking like the original due date.
+    const lateDateObj = task.lateDate ? new Date(task.lateDate) : null;
+    const isLateRollOver = !!(hasRealDueDate && dueDate && lateDateObj
+      && !isNaN(lateDateObj.getTime())
+      && lateDateObj.getTime() > task.dueDate.getTime()
+      && dueDate.getTime() === lateDateObj.getTime()
+      && now.getTime() > task.dueDate.getTime());
 
     let urgencyClass = '';
     let dueLabel = '';
@@ -291,6 +302,12 @@ export function createTaskCard(task, now, completedMap) {
         dueLabel = `Due ${dateStr}`;
       }
 
+      // The displayed date IS the rolled-over late deadline now — label it
+      // so it isn't mistaken for the regular due date.
+      if (isLateRollOver && urgencyClass !== 'due-overdue') {
+        dueLabel = `${dueLabel} · late`;
+      }
+
       if (isCustomDate) {
         statusBadgeHtml += ` <span class="date-badge-wrap">${editBtnHtml}<span class="badge-tag custom-date-chip">✏️ Custom</span></span>`;
       }
@@ -300,16 +317,15 @@ export function createTaskCard(task, now, completedMap) {
       statusBadgeHtml = `<span class="date-badge-wrap">${editBtnHtml}<span class="badge-tag undated-chip">⚠ NO DUE DATE</span></span>`;
     }
 
-    // Gradescope submission window: the due date is the window OPEN (e.g.
-    // Sep 22) and the late date is the window CLOSE (e.g. Sep 24) — surface
-    // both so the range survives the scrape. Same-day windows (due = late)
-    // collapse back to a single date.
-    if (task.lateDate && dueDate) {
-      const late = task.lateDate;
-      if (!isNaN(late.getTime()) && localDateKey(late) !== localDateKey(dueDate)) {
-        const lateStr = late.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-        dueLabel = dueLabel ? `${dueLabel} · Late ${lateStr}` : `Late ${lateStr}`;
-      }
+    // Multi-date deadline: the regular due date plus a LATER one (a Canvas
+    // "Assign to: Section"-style override, or a Gradescope submission-window
+    // close, e.g. Sep 22 → Sep 24). Surface the range while the regular date
+    // is still the displayed one; once effectiveDueDate has rolled onto the
+    // late date the keys match and the suffix collapses (the "· late" marker
+    // above already says it). Same-day windows collapse too.
+    if (lateDateObj && dueDate && !isNaN(lateDateObj.getTime()) && localDateKey(lateDateObj) !== localDateKey(dueDate)) {
+      const lateStr = lateDateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      dueLabel = dueLabel ? `${dueLabel} · Late ${lateStr}` : `Late ${lateStr}`;
     }
 
     if (task.isSubmitted) {

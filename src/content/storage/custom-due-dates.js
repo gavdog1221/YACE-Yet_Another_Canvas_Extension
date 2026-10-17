@@ -28,6 +28,17 @@ export function applyCustomDueDates() {
     });
   }
 
-export function effectiveDueDate(t) {
-    return t.dueDate || t.customDueDate || null;
+// The operative deadline for a task. Most tasks just have one due date, but
+// some carry a LATER "late" deadline as well (a Canvas "Assign to: Section"
+// override, or a Gradescope submission-window close). Once the regular date
+// has passed and the late one is still ahead, the late date becomes the
+// operative deadline — that is what keeps the task sitting in the Due tab
+// (instead of flipping to Overdue) with the late date shown, until the late
+// window itself closes.
+export function effectiveDueDate(t, now = new Date()) {
+    const base = t.dueDate || t.customDueDate || null;
+    if (!base || !t.lateDate) return base;
+    const late = (t.lateDate instanceof Date) ? t.lateDate : new Date(t.lateDate);
+    if (isNaN(late.getTime()) || late.getTime() <= base.getTime()) return base;
+    return now.getTime() > base.getTime() ? late : base;
   }
