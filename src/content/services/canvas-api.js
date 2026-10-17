@@ -59,6 +59,83 @@ function parseGradescopeWindowDates(text) {
     return [];
   }
 
+// Reading a cell as plain text FUSES adjacent inline elements with no separator
+// between them: Gradescope renders a graded row as
+// `<span>5.0 / 5.0</span><span>100%</span>`, and innerText reads that back as
+// "5.0 / 5.0100%" — the max points silently swallow the first digit of the
+// percentage, so a perfect 5/5 homework showed up as "5 out of 5.01". Joining
+// every text node with a space keeps each number whole.
+function readSpacedText(root) {
+    if (!root) return '';
+    const parts = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        const tag = node.parentNode && node.parentNode.nodeName;
+        return (tag === 'SCRIPT' || tag === 'STYLE') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let node;
+    while ((node = walker.nextNode())) {
+      const t = (node.nodeValue || '').trim();
+      if (t) parts.push(t);
+    }
+    return parts.join(' ');
+  }
+
+// Convert a Gradescope score cell's text into { score, pointsPossible }.
+//
+// The score itself is "<score> / <max>" (rendered with a decimal, e.g.
+// "5.0 / 5.0"), but a percentage printed right next to it can still end up
+// fused on to the max ("5.0" + "100%" -> 5.0100). When that happens the "%"
+// after the digits pins the real max down: walk back from the digit run trying
+// shorter spellings ("5.0100" -> "5.010" -> "5.01" -> "5.0" -> "5") and keep
+// the longest one whose implied percentage (score / max) matches the
+// percentage that follows it. Nothing is trimmed unless the numbers left over
+// after the fraction prove the trim right, so a plain "4.5 / 5.5 81.8%" row
+// keeps its real max.
+function parseGradescopeScore(text) {
+    const raw = (text || '').trim();
+    if (!raw) return null;
+    const m = raw.match(/(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+    if (!m) return null;
+
+    const score = parseFloat(m[1]);
+    const maxStr = m[2];
+    const maxVal = parseFloat(maxStr);
+    if (isNaN(score) || isNaN(maxVal)) return null;
+
+    // The whitespace-free run right after the fraction ("" when the source has
+    // proper separators); anything glued on here is the suspect.
+    const tail = (raw.slice(m.index + m[0].length).match(/^\S*/) || [''])[0];
+    const run = maxStr + tail;
+
+    let bestStr = maxStr;
+    let bestErr = Infinity;
+    // Longest spelling first, so a tie keeps the value closest to the page.
+    for (let end = maxStr.length; end > 0; end--) {
+      const candStr = maxStr.slice(0, end);
+      if (candStr.endsWith('.')) continue;
+      const cand = parseFloat(candStr);
+      if (!(cand > 0)) continue;
+      // e.g. run "5.0100%" offers "5.0" + "100%" or "5.01" + "00%".
+      const pctM = run.slice(end).match(/^(\d*\.?\d+)\s*%/);
+      if (!pctM) continue;
+      const pct = parseFloat(pctM[1]);
+      if (!(pct > 0)) continue;
+      const err = Math.abs((score / cand) * 100 - pct);
+      if (err < bestErr) {
+        bestErr = err;
+        bestStr = candStr;
+      }
+    }
+
+    // Only trust a shorter spelling when it makes the fraction and the
+    // percentage agree (Gradescope rounds them, so allow a little slack);
+    // otherwise those digits really are the max points.
+    const pointsPossible = bestErr <= 1.5 ? parseFloat(bestStr) : maxVal;
+    return { score: score, pointsPossible: pointsPossible };
+  }
+
 export async function fetchGradescopeData(hiddenCourseKeys = []) {
     const gsTasksByCourse = {};
     const gsGradesByCourse = {};
@@ -143,15 +220,17 @@ export async function fetchGradescopeData(hiddenCourseKeys = []) {
 
             const statusEl = row.querySelector('.submissionStatus--text, .submissionStatus');
             const statusText = statusEl ? statusEl.innerText.trim() : '';
-            const rowText = row.innerText || '';
-            const scoreMatch = (statusText || rowText).match(/(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+            // Read the score cell with separators between its text nodes (see
+            // readSpacedText) so a glued-on percentage can't inflate the max,
+            // then let parseGradescopeScore undo any fusion that survived.
+            const score = parseGradescopeScore(readSpacedText(statusEl || row));
 
-            if (scoreMatch) {
+            if (score) {
               grades.push({
                 id: generateTaskId(courseKey, title) + '_grade',
                           title: title,
-                          score: parseFloat(scoreMatch[1]),
-                          pointsPossible: parseFloat(scoreMatch[2]),
+                          score: score.score,
+                          pointsPossible: score.pointsPossible,
                           url: url,
                           gradedAt: null,
                           isGradescope: true,
