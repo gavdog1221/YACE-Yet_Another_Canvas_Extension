@@ -1,0 +1,138 @@
+/* ==========================================================================
+ *  view-tests.css — Tests tab (tests/quizzes calendar)
+ *  The 7-day strip reuses .workload-strip / .workload-day from hud.css so it
+ *  is pixel-identical to the Due tab ribbon; this file adds the day-group
+ *  headers, the calendar entry rows (syllabus exam dates + custom tests),
+ *  the "+ Test" toolbar, and the empty-state hint.
+ *  See manifest.json `content_scripts.css` for order.
+ *  ========================================================================== */
+
+/* Per-day group header: "Today / Tomorrow / Thu Oct 22" left, countdown right. */
+.tests-day-header {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  margin: 10px 0 4px 0 !important;
+  padding: 0 2px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  color: var(--text-secondary) !important;
+}
+.tests-day-header.is-today { color: var(--primary-accent) !important; }
+
+.tests-day-countdown {
+  flex-shrink: 0 !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* Empty-state sub-note: how the calendar gets filled. */
+.tests-empty-hint {
+  display: block !important;
+  margin-top: 4px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* Add-a-test toolbar row, above the strip: right-aligned so it doesn't fight
+ * the ribbon's day columns below it. */
+.tests-toolbar {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 8px 0 0 0 !important;
+}
+.tests-add-btn { font-weight: 700 !important; }
+
+/* Calendar rows: syllabus exam dates + custom tests. Compact one-liners in
+ * the task-card vocabulary (course hue on the left bar + dot, card bg,
+ * same hover lift) but half the height — there's no points/URL/completion
+ * chrome to carry. */
+.tests-entry {
+  --task-course-accent: var(--primary-accent);
+  --task-course-glow: var(--accent-glow);
+  background: var(--card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-left: 3px solid var(--task-course-accent) !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: 0 !important;
+  padding: 8px 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  margin-bottom: 6px !important;
+  position: relative !important;
+  z-index: 3 !important;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease !important;
+}
+.tests-entry.is-link { cursor: pointer !important; }
+.tests-entry:hover { background: rgba(255, 255, 255, 0.09) !important; transform: translateX(2px) !important; }
+
+.tests-entry-dot {
+  flex-shrink: 0 !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: var(--task-course-accent) !important;
+  box-shadow: 0 0 6px var(--task-course-glow) !important;
+}
+
+.tests-entry-main {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+.tests-entry-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.tests-entry-course {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--text-tertiary) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Provenance chip: where the entry came from. */
+.tests-entry-tag {
+  flex-shrink: 0 !important;
+  font-size: 8px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  color: var(--text-tertiary) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 3px !important;
+  padding: 2px 5px !important;
+}
+
+.tests-entry-delete {
+  flex-shrink: 0 !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-tertiary) !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
+  border-radius: 3px !important;
+}
+.tests-entry-delete:hover { color: #ff453a !important; background: rgba(255, 69, 58, 0.12) !important; }

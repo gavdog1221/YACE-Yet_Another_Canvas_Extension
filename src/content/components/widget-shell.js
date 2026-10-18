@@ -221,6 +221,7 @@ export async function injectWidget(container) {
     <button type="button" class="hud-view-btn active" data-tab="upcoming">Due</button>
     <button type="button" class="hud-view-btn" data-tab="overdue">Overdue <span class="hud-tab-badge" id="hud-overdue-badge" style="display:none;"></span><span id="overdue-total-badge" style="display:none;"></span></button>
     <button type="button" class="hud-view-btn" data-tab="completed">Done</button>
+    <button type="button" class="hud-view-btn" data-tab="tests">Tests <span class="hud-tab-badge" id="tests-tab-badge" style="display:none;"></span></button>
     <button type="button" class="hud-view-btn" data-tab="grades">Grades <span class="hud-tab-badge grades-change-badge" id="grades-change-badge" style="display:none;"></span></button>
     <button type="button" class="hud-view-btn" data-tab="general">Info</button>
     <button type="button" class="hud-view-btn" data-tab="announcements">News <span class="hud-tab-badge announce-dot" id="announce-badge" style="display:none;"></span></button>

@@ -35,19 +35,20 @@ export function resetPanelCollapsed() {
   }
 
 // --- Panel display order --------------------------------------------------
-// The two SIDE tiles (News, Info) keep a user-draggable relative order and are
-// the only entries in the array. Assignments, Grades and Schedule are PINNED and
+// The SIDE tiles (News, Tests, Info) keep a user-draggable relative order and
+// are the only entries in the array. Assignments, Grades and Schedule are PINNED and
 // never appear in it: Assignments is the tall centre column, Grades the tall
 // right column (it absorbed the former Recent Grades feed), and Schedule the
-// full-width bottom row. Only two tiles exist now, so they map exactly onto the
-// two left-hand slots — top and bottom.
+// full-width bottom row. The tiles map onto the left column's slots — first =
+// top, last = bottom (see reflowDashboardLayout / resolveSlot in
+// dashboard-view.js).
 //
-// Existing installs hold a saved four-entry order ('news', 'recent-grades',
-// 'grades', 'info'). sanitizeOrder() drops the keys that no longer exist and
-// requires the remainder to be complete, so those upgrade to ['news','info']
-// — news on top, info below — with no storage migration needed.
-const DEFAULT_CONTENT_ORDER = ['news', 'info'];
-const ALL_CONTENT_KEYS = ['news', 'info'];
+// Existing installs hold a saved two-entry order ('news', 'info'). sanitizeOrder()
+// drops the keys that no longer exist and requires the remainder to be complete,
+// so those fall back to the default ['news','info','tests'] — news on top,
+// tests below, info last — with no storage migration needed.
+const DEFAULT_CONTENT_ORDER = ['news', 'tests', 'info'];
+const ALL_CONTENT_KEYS = ['news', 'tests', 'info'];
 
 function sanitizeOrder(raw) {
   if (!Array.isArray(raw)) return null;

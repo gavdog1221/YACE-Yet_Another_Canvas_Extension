@@ -1,3 +1,5 @@
+import { localDateKey } from './dates.js';
+
 export function normalizeCourseCode(name) {
     if (!name) return 'GENERAL';
     const match = name.match(/([a-zA-Z]{2,5}\s*\d{3})/i);
@@ -554,4 +556,206 @@ export function findSyllabusPdfUrl(syllabusHtml, baseOrigin = '') {
       }
     }
     return null;
+  }
+
+// --- Test / quiz detection --------------------------------------------------
+// Title-based classification for the Tests tab (views/tests-view.js): tells an
+// exam/quiz from coursework so the calendar can be a projection of the task
+// cache with no extra Canvas scan and no stored-shape change. Canvas's
+// `submission_types: ["online_quiz"]` would be a stronger signal, but persisting
+// it means a cache-key bump + full rescan before the tab shows anything; titles
+// carry quiz/exam/test vocabulary in practice, and the occasional miss is fine.
+//
+// Compound words that contain a test word but aren't one ("Final Report",
+// "Test Corrections", "Practice Test") veto only the AMBIGUOUS words (test /
+// final). A decisive word (quiz / exam / midterm) always wins, so "Midterm
+// Review" still counts — that deadline is stacked right before the exam anyway.
+const TEST_WORD_STRONG = /\b(?:quizzes|quiz|midterms?|mid[\s-]?terms?|exams?)\b/i;
+const TEST_WORD_AMBIGUOUS = /\b(?:tests?|finals?)\b/i;
+const NOT_TEST_WORD = /\b(?:projects?|reports?|papers?|drafts?|presentations?|essays?|proposals?|portfolios?|stud(?:y|ies)|reviews?|prep|practices?|corrections?|questions?|banks?|sheets?|guides?|worksheets?|reflections?)\b/i;
+
+export function isTestLike(task) {
+    const title = (typeof task === 'string' ? task : (task && task.title)) || '';
+    if (TEST_WORD_STRONG.test(title)) return true;
+    if (TEST_WORD_AMBIGUOUS.test(title) && !NOT_TEST_WORD.test(title)) return true;
+    return false;
+  }
+
+// --- Syllabus exam-date extraction ------------------------------------------
+// Pulls the exam schedule out of syllabus text for the Tests tab. Given
+//   "There will be 3 midterm exams during the lecture time on 10/2, 10/30,
+//    12/4 and a final TBA."
+// it yields three Midterm entries (one per date) + one undated Final exam.
+// Accepts raw syllabus HTML or already-stripped text: block tags become
+// newlines first so sentence context survives the strip, and plain text
+// (including PDF-extraction output) just passes through. Each date is
+// attributed to the NEAREST exam word in a window around it — so one sentence
+// can carry several exams and "midterm is 10/2 and the final is 12/15" splits
+// correctly — and a date only counts when an exam word is actually nearby
+// ("grades are due 10/2" is ignored).
+const EXAM_MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+// "Finals week", "final review", "final project" … are not THE final exam.
+const FINAL_WORD_RE = /\bfinals?\b(?!\s*(?:-\s*)?(?:week|weeks|period|schedule|days?|review|project|report|paper|draft|presentation|portfolio|essay|celebration|party))/i;
+// Slash-tolerant on purpose: syllabus HTML frequently arrives with entities or
+// paste-artifact spacing around the separator ("10&nbsp;/&nbsp;2", "10 / 2"
+// as a prof actually typed it). The exam-word window plus the month/day
+// validity check in buildExamDate keep the false-positive rate on things like
+// "chapters 10 / 12" acceptably low.
+const EXAM_DATE_NUMERIC_RE = /\b(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?\b/g;
+const EXAM_DATE_MONTH_RE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?\s+(\d{1,2})(?:\s*(?:-|–|—|\s+to\s+)\s*\d{1,2})?(?:st|nd|rd|th)?(?:,?\s*(\d{4}))?\b/gi;
+// Exam word + TBA in one breath: "a final TBA", "midterm to be determined".
+// The [^.!?] gap excludes commas on purpose, so in the sentence above only
+// "final TBA" matches — not "exams … on 10/2, 10/30, 12/4 … TBA".
+const EXAM_TBA_RE = /\b(midterms?|mid[\s-]?terms?|finals?|exams?|tests?|quizzes|quiz)\b[^.!?]{0,50}\b(TBA|TBD|to\s+be\s+(?:announced|determined)|announced\s+later)\b/i;
+// Sentences that mention exams but are not scheduling one (conservative:
+// better to miss an ambiguous date than invent one — user can add it by hand).
+const EXAM_NOISE_RE = /\b(make[\s-]?up|makeups?|lowest|dropped|review|optional)\b/i;
+
+// Exam word nearest the date at `dateAt` (offset within `text`). Words that
+// COME BEFORE the date win — dates follow their exam mention, so in
+// "3 midterm exams … on 10/2, 10/30, 12/4 and a final TBA" each date reads as
+// a Midterm even though "final" sits closer to 12/4 (which has no date of its
+// own; the TBA pass catches that one). A generic word hugging a specific one
+// ("midterm exams", "final exam") upgrades to the specific kind, and a number
+// right after the word is kept ("Exam 1"). Returns { kind, title } or null.
+function nearestExamKind(text, dateAt) {
+    const candidates = [];
+    const collect = (re, kind, label) => {
+      const m = re.exec(text);
+      if (m) candidates.push({ start: m.index, end: m.index + m[0].length, kind, label });
+    };
+    collect(/\bmid[\s-]?terms?\b/i, 'midterm', 'Midterm');
+    collect(FINAL_WORD_RE, 'final', 'Final exam');
+    collect(/\bexams?\b/i, 'exam', 'Exam');
+    collect(/\bquizzes\b|\bquiz\b/i, 'quiz', 'Quiz');
+    collect(/\btests?\b/i, 'test', 'Test');
+    if (!candidates.length) return null;
+
+    let chosen;
+    const before = candidates.filter((c) => c.end <= dateAt).sort((a, b) => (dateAt - a.end) - (dateAt - b.end));
+    if (before.length) {
+      chosen = before[0];
+      // "3 midterm exams … on 10/2": nearest word before the date is the
+      // generic "exam", but the specific word hugging it names the real kind.
+      if (chosen.kind !== 'midterm' && chosen.kind !== 'final') {
+        const specific = before
+          .filter((c) => c.kind === 'midterm' || c.kind === 'final')
+          .sort((a, b) => Math.abs(a.end - chosen.end) - Math.abs(b.end - chosen.end))[0];
+        if (specific && Math.abs(specific.end - chosen.end) <= 25) chosen = specific;
+      }
+    } else {
+      chosen = candidates.slice().sort((a, b) => (a.start - dateAt) - (b.start - dateAt))[0];
+    }
+    // Trailing number ("Exam 2 on 11/5"). The lookahead refuses date-looking
+    // runs so "Midterm 10/2" doesn't become "Midterm 10".
+    const num = /^\s*(?:#\s*)?(\d{1,2})(?![\d/-])/.exec(text.slice(chosen.end, chosen.end + 16));
+    return { kind: chosen.kind, title: num ? `${chosen.label} ${num[1]}` : chosen.label };
+  }
+
+// Month/day (+ optional written year) → a real local Date, or null if invalid.
+function buildExamDate(month, day, yearStr, today) {
+    if (!(month >= 1 && month <= 12) || !(day >= 1 && day <= 31)) return null;
+    if (yearStr) {
+      const year = yearStr.length <= 2 ? 2000 + parseInt(yearStr, 10) : parseInt(yearStr, 10);
+      const d = new Date(year, month - 1, day);
+      return (d.getMonth() === month - 1 && d.getDate() === day) ? d : null;
+    }
+    // No year written ("on 10/2"): take the one of {y-1, y, y+1} closest to
+    // today, so a fall syllabus's January final lands NEXT year and a spring
+    // syllabus's December midterm lands LAST year.
+    const base = today.getFullYear();
+    const cand = [base - 1, base, base + 1]
+      .map((y) => new Date(y, month - 1, day))
+      .filter((d) => d.getMonth() === month - 1 && d.getDate() === day);
+    if (!cand.length) return null;
+    cand.sort((a, b) => Math.abs(a - today) - Math.abs(b - today));
+    return cand[0];
+  }
+
+export function extractExamDates(syllabusHtml, today = new Date()) {
+    if (!syllabusHtml) return [];
+    const text = String(syllabusHtml)
+      .replace(/<\s*(?:br|\/p|\/div|\/li|\/h[1-6]|\/tr|\/td|\/th|\/table|\/section)[^>]*>/gi, '\n')
+      // Inline tags are removed WITHOUT inserting a space: the browser renders
+      // `10<span>/</span>2` (Canvas RTE paste artifacts from Word/macOS) as the
+      // clean "10/2", and a space here silently broke every date regex against
+      // text the user quite literally sees as "10/2".
+      .replace(/<[^>]*>/g, '')
+      .replace(/&frasl;/gi, '/')   // entity-slash renders as "/", not a space
+      .replace(/&[a-z#0-9]+;/gi, ' ')
+      .replace(/[ \t]+/g, ' ');
+    const results = [];
+    const seen = new Set();
+    const push = (kind, title, dateKey, excerpt) => {
+      const key = `${kind}|${dateKey || 'tba'}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      results.push({ kind, title, dateKey: dateKey || null, excerpt });
+    };
+    const lines = text.split('\n');
+    // Text immediately above a soft-wrapped line: Canvas <br>/<p> wrapping and
+    // PDF line breaks routinely split "3 midterm exams … on" from the date
+    // list it governs ("…time on" / "10/2, 10/30, 12/4 and a final TBA."), and
+    // without that context the dates find no exam word and vanish — or get
+    // attributed to a stray "final" sitting in the date line. Walks back across
+    // lines that did NOT end a sentence, stopping at blank lines or real
+    // sentence ends so unrelated sentences never lend their exam words.
+    const contextTail = (idx) => {
+      let out = '';
+      for (let i = idx - 1; i >= 0; i--) {
+        const prev = lines[i].trim();
+        if (!prev || /[.!?]$/.test(prev)) break;
+        out = `${prev.slice(-90)} ${out}`;
+        if (out.length >= 130) break;
+      }
+      return out.trim().slice(-130);
+    };
+    lines.forEach((line, lineIdx) => {
+      line.split(/(?<=[.!?])\s+/).forEach((rawSentence) => {
+        const sentence = rawSentence.trim();
+        if (sentence.length > 1200) return;
+        const ctx = contextTail(lineIdx);
+        // The combined text is noise-checked so a bleed line can't smuggle
+        // dates past "make-up exams…".
+        const full = ctx ? `${ctx} ${sentence}` : sentence;
+        if (EXAM_NOISE_RE.test(full)) return;
+        const excerpt = full.length > 140 ? full.slice(0, 140).trim() + '…' : full;
+
+        const dates = [];
+        let m;
+        EXAM_DATE_NUMERIC_RE.lastIndex = 0;
+        while ((m = EXAM_DATE_NUMERIC_RE.exec(sentence))) {
+          const date = buildExamDate(parseInt(m[1], 10), parseInt(m[2], 10), m[3], today);
+          if (date) dates.push({ at: m.index, date });
+        }
+        EXAM_DATE_MONTH_RE.lastIndex = 0;
+        while ((m = EXAM_DATE_MONTH_RE.exec(sentence))) {
+          const date = buildExamDate(EXAM_MONTHS[m[1].slice(0, 3).toLowerCase()], parseInt(m[2], 10), m[3], today);
+          if (date) dates.push({ at: m.index, date });
+        }
+        dates.forEach((d) => {
+          // Attribute each date to the nearest exam word in a window around
+          // it, over the context-extended text ("midterm is 10/2 and the
+          // final is 12/15" splits correctly).
+          const at = (ctx ? ctx.length + 1 : 0) + d.at;
+          const winStart = Math.max(0, at - 90);
+          const winEnd = Math.min(full.length, at + 45);
+          const kind = nearestExamKind(full.slice(winStart, winEnd), at - winStart);
+          if (!kind) return;
+          push(kind.kind, kind.title, localDateKey(d.date), excerpt);
+        });
+
+        // Undated exam ("a final TBA") — scheduled, no date announced yet.
+        const tba = EXAM_TBA_RE.exec(full);
+        if (tba) {
+          const word = tba[1].toLowerCase().replace(/[\s-]/g, '');
+          const kind = word.startsWith('mid') ? 'midterm'
+            : word.startsWith('final') ? 'final'
+              : word.startsWith('exam') ? 'exam'
+                : word.startsWith('quiz') ? 'quiz' : 'test';
+          push(kind, kind === 'final' ? 'Final exam' : kind.charAt(0).toUpperCase() + kind.slice(1), null, excerpt);
+        }
+      });
+    });
+    return results.slice(0, 30);
   }

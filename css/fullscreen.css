@@ -266,6 +266,7 @@
 }
 .fullscreen-panel-badge.is-grades { background: var(--primary-accent) !important; }
 .fullscreen-panel-badge.is-news { background: var(--primary-accent) !important; }
+.fullscreen-panel-badge.is-tests { background: var(--primary-accent) !important; }
 
 .fullscreen-panel-body {
   flex: 1 !important;

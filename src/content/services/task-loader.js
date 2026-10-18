@@ -10,7 +10,7 @@ import { autoCompleteSubmittedTasks } from '../storage/completed-tasks.js';
 import { mergeCustomTasksIntoCourseMap } from '../storage/custom-assignments.js';
 import { applyCustomDueDates } from '../storage/custom-due-dates.js';
 import { isCourseInActiveTermWindow, isCurrentSemesterCourse, localDateKey } from '../utils/dates.js';
-import { extractCoreAssignmentToken, findSyllabusPdfUrl, generateTaskId, normalizeCourseCode, parseAndCleanTitle, parseGradeWeightDistributions, parseGradeWeights, parseGradeWeightsInProse, parseOfficeHours, parseSyllabusInstructors } from '../utils/text.js';
+import { extractCoreAssignmentToken, extractExamDates, findSyllabusPdfUrl, generateTaskId, normalizeCourseCode, parseAndCleanTitle, parseGradeWeightDistributions, parseGradeWeights, parseGradeWeightsInProse, parseOfficeHours, parseSyllabusInstructors } from '../utils/text.js';
 import { extractPdfText, probePdfStreams } from '../utils/pdf.js';
 import { refreshAnnouncementsPanels, updateAnnouncementBadge } from '../views/announcements-view.js';
 import { renderCurrentView, renderFilterPills, renderWorkloadStrip, updateProgressBar } from '../views/upcoming-view.js';
@@ -247,6 +247,12 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
     // renders a RETRY-able error instead.
     state.isScanning = true;
     state.scanStartedAt = Date.now();
+    // Fresh per-scan memo for syllabus/module PDF text (see fetchPdfText):
+    // the instructor, weights, and exam-date enrichments frequently hit the
+    // SAME file within one scan, and PDF byte fetching (with its CDN verifier
+    // hop) is the expensive part. Dropped again in the finally below, so it
+    // never carries text across scans.
+    scanPdfTextCache = new Map();
     const scanId = (globalThis.__yaceScanSeq = (globalThis.__yaceScanSeq || 0) + 1);
     const listContainer = document.getElementById('module-tasks-list');
 
@@ -367,6 +373,34 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
                 ? Math.min(prevChoice, weightDists.length - 1)
                 : fallbackToPrevWeights ? (typeof prevRes.gradeWeightChoice === 'number' ? prevRes.gradeWeightChoice : 0) : 0,
               officeHours: parseOfficeHours(syllabusText),
+              // Exam dates for the Tests tab, parsed straight from the inline
+              // syllabus body at scan time (zero extra requests). Same "never
+              // wipe on a flaky rescrape" rule as the weights above: an empty
+              // parse this run keeps the previous run's dates until a scan
+              // actually reads fresh syllabus text.
+              examDates: (() => {
+              const parsedExams = extractExamDates(syllabusHtml);
+              // Diagnostics for the Tests tab: what the syllabus scan actually
+              // extracted (or why it got nothing) — see utils/text.js. When the
+              // parse only produced undated entries, dump the RAW syllabus HTML
+              // too: tags/entities wrapped around the dates (paste artifacts)
+              // are invisible in the stripped text but obvious in the source,
+              // and one paste of this line is enough to pin down a miss.
+              const parsedDated = parsedExams.some((e) => e.dateKey);
+              if (parsedDated) {
+                console.info(`[YACE] exam dates for ${rawCourseName}: ${parsedExams.map((e) => `${e.title} @ ${e.dateKey || 'TBA'}`).join(', ')}`);
+              } else if (syllabusText.length > 0) {
+                console.info(`[YACE] no DATED exam dates for ${rawCourseName} (${parsedExams.length} undated, syllabus ${syllabusText.length} chars) — parsed:`,
+                  parsedExams.map((e) => `${e.title} @ ${e.dateKey || 'TBA'}`).join(', ') || '(none)',
+                  `\nraw html head: ${syllabusHtml.slice(0, 1500)}`);
+              } else {
+                console.info(`[YACE] no inline syllabus text for ${rawCourseName} — exam dates, if any, must come from the syllabus PDF`);
+              }
+              if (!parsedExams.length && Array.isArray(prevRes.examDates) && prevRes.examDates.length) {
+                return prevRes.examDates;
+              }
+              return parsedExams;
+            })(),
               syllabusExcerpt: syllabusText.length > 0
                 ? (syllabusText.length > 220 ? syllabusText.slice(0, 220).trim() + '…' : syllabusText)
                 : '',
@@ -558,6 +592,12 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
         // syllabus text already produced a breakdown.
         await enrichCourseGradeWeights(unifiedCourseMap[courseKey], headers, courseKey);
 
+        // Exam-date fallback: the dated midterm/final schedule often lives
+        // only in the linked syllabus PDF when the inline body just announces
+        // the exams ("…and a final TBA — see the syllabus"). No-op when the
+        // inline parse already produced a dated exam.
+        await enrichCourseExamDates(unifiedCourseMap[courseKey], headers);
+
         stepDone++;
         if (showLoadingUI) {
           const pct = 15 + Math.round((stepDone / totalSteps) * 60);
@@ -728,6 +768,7 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
       // 30 seconds for as long as the tab is open. saveLocalCache already
       // stamped it on success — this covers the throw path.
       touchLocalCacheTime();
+      scanPdfTextCache = null;
     }
   }
 
@@ -1043,7 +1084,13 @@ async function fetchCanvasPdfBytes(url, headers) {
     return null;
   }
 
+// Per-scan memo backing fetchPdfText — module-level so every enrichment
+// (instructor / weights / exam dates) shares one copy of a PDF's text per
+// scan. Only non-null while a scan is running (loadTasks sets/drops it).
+let scanPdfTextCache = null;
+
 async function fetchPdfText(url, headers) {
+    if (scanPdfTextCache && scanPdfTextCache.has(url)) return scanPdfTextCache.get(url);
     const buf = await fetchCanvasPdfBytes(url, headers);
     if (!buf) return '';
     const text = await extractPdfText(buf);
@@ -1051,6 +1098,7 @@ async function fetchPdfText(url, headers) {
       const probe = await probePdfStreams(buf);
       console.warn(`[YACE] Syllabus PDF yielded no text — size=${buf.byteLength} head="${bytesToPrintableHead(buf)}" streams=${JSON.stringify(probe)} url=${url}`);
     }
+    if (scanPdfTextCache) scanPdfTextCache.set(url, text);
     return text;
   }
 
@@ -1121,6 +1169,86 @@ async function enrichCourseGradeWeights(courseEntry, headers, courseKey) {
     }
     if (urls.length) {
       console.warn(`[YACE] No grade weights from any syllabus PDF for ${courseEntry.name || 'course'} — searched:`, urls);
+    }
+  }
+
+// Merge PDF-derived exam dates into the inline-syllabus ones for the Tests
+// tab. Inline entries come first and win per kind|date slot; a PDF entry that
+// carries a REAL date for a kind the inline body only knew as TBA ("a final
+// TBA" inline, "Final exam: December 15" in the PDF) upgrades that slot
+// instead of duplicating it.
+function mergeExamDates(inline, fromPdf) {
+    const merged = [];
+    const seen = new Set();
+    const tbaSlots = new Map();     // kind → index of its TBA entry in merged
+    const kindsWithDates = new Set(); // kinds that already have a dated entry
+    const add = (e) => {
+      const key = `${e.kind}|${e.dateKey || 'tba'}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(e);
+      if (!e.dateKey) tbaSlots.set(e.kind, merged.length - 1);
+      else kindsWithDates.add(e.kind);
+    };
+    inline.forEach(add);
+    fromPdf.forEach((e) => {
+      if (!e.dateKey) {
+        // No TBA copy of a kind that is already scheduled with a real date.
+        if (kindsWithDates.has(e.kind)) return;
+        add(e);
+        return;
+      }
+      const tbaIdx = tbaSlots.get(e.kind);
+      if (tbaIdx !== undefined) {
+        merged[tbaIdx] = e;
+        seen.delete(`${e.kind}|tba`);
+        tbaSlots.delete(e.kind);
+        return;
+      }
+      add(e);
+    });
+    return merged;
+  }
+
+// Exam-date backfill from the syllabus PDFs. The inline syllabus body often
+// only announces the exams without dates ("3 midterm exams … and a final
+// TBA — see the syllabus") while the actual schedule lives in the linked PDF,
+// so PDF text is parsed whenever the inline parse produced no DATED exam.
+// Runs per course inside the scan (same single-flight / 15-min cadence
+// gating as the weight backfill above, and the per-scan PDF-text memo means
+// a file fetched for weights/instructors is not fetched again here). Inline
+// entries always survive the merge; stops at the first PDF that yields a
+// dated schedule.
+async function enrichCourseExamDates(courseEntry, headers) {
+    const res = (courseEntry && courseEntry.resources) || {};
+    const inline = Array.isArray(res.examDates) ? res.examDates : [];
+    if (inline.some((e) => e && e.dateKey)) return;
+
+    const urls = [];
+    if (res.syllabusPdfUrl) urls.push(res.syllabusPdfUrl);
+    (Array.isArray(res.modulePdfUrls) ? res.modulePdfUrls : []).forEach(u => {
+      if (!urls.includes(u)) urls.push(u);
+    });
+
+    let tbaOnly = [];
+    for (const url of urls) {
+      const text = await fetchPdfText(url, headers);
+      const pdfExams = text ? extractExamDates(text) : [];
+      if (pdfExams.some((e) => e.dateKey)) {
+        res.examDates = mergeExamDates(inline, pdfExams);
+        console.info(`[YACE] exam dates from PDF for ${courseEntry.name || 'course'}: ${res.examDates.map((e) => `${e.title} @ ${e.dateKey || 'TBA'}`).join(', ')}`);
+        return;
+      }
+      // A PDF that only repeats what the inline body said (all TBA) is kept
+      // as a fallback in case no later PDF carries dates either.
+      if (pdfExams.length && !tbaOnly.length) tbaOnly = pdfExams;
+    }
+    if (tbaOnly.length) {
+      const merged = mergeExamDates(inline, tbaOnly);
+      if (merged.length > inline.length) {
+        res.examDates = merged;
+        console.info(`[YACE] exam dates from PDF (no dates, extra kinds) for ${courseEntry.name || 'course'}: ${merged.map((e) => `${e.title} @ ${e.dateKey || 'TBA'}`).join(', ')}`);
+      }
     }
   }
 

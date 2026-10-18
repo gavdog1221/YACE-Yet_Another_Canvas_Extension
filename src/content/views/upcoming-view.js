@@ -15,6 +15,7 @@ import { renderDashboardView } from '../views/dashboard-view.js';
 import { renderGeneralView } from '../views/general-view.js';
 import { renderGradesView, updateGradeChangeBadge } from '../views/grades-view.js';
 import { renderScheduleView } from '../views/schedule-view.js';
+import { countUpcomingTests, renderTestsView } from '../views/tests-view.js';
 
 export function renderWorkloadStrip() {
     const container = document.getElementById('workload-strip-container');
@@ -593,6 +594,16 @@ export function createTaskCard(task, now, completedMap) {
       return card;
   }
 
+// HUD badge for the Tests tab — exported so the Tests view can refresh it
+// right after a custom test is added/removed without a full re-render.
+export function updateTestsTabBadge() {
+    const badge = document.getElementById('tests-tab-badge');
+    if (!badge) return;
+    const soon = countUpcomingTests();
+    badge.style.display = soon > 0 ? 'inline-flex' : 'none';
+    badge.innerText = soon > 0 ? soon : '';
+  }
+
 export function renderCurrentView() {
     const listContainer = document.getElementById('module-tasks-list');
 
@@ -656,6 +667,10 @@ export function renderCurrentView() {
       hudOverdueBadge.innerText = totalOverdueCount;
     }
 
+    // Tests tab badge: tests/quizzes landing in the next 7 days (see
+    // tests-view.js — syllabus exam dates + custom tests).
+    updateTestsTabBadge();
+
     // Full screen shows every tab at once (see dashboard-view.js) instead of
     // the single active tab. Pass the pre-wipe ribbon/search node refs so
     // those controls survive the rebuild.
@@ -671,6 +686,11 @@ export function renderCurrentView() {
 
     if (state.currentTab === 'announcements') {
       renderAnnouncementsView(listContainer, hiddenCourses);
+      return;
+    }
+
+    if (state.currentTab === 'tests') {
+      renderTestsView(listContainer);
       return;
     }
 

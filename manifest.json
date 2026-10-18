@@ -55,6 +55,7 @@
         "css/view-dining.css",
         "css/view-schedule.css",
         "css/view-days-off.css",
+        "css/view-tests.css",
         "css/fullscreen.css"
       ],
       "run_at": "document_start"

@@ -30,6 +30,7 @@ import { renderGradesView } from '../views/grades-view.js';
 import { renderAnnouncementsView } from '../views/announcements-view.js';
 import { renderGeneralView } from '../views/general-view.js';
 import { renderScheduleView } from '../views/schedule-view.js';
+import { countUpcomingTests, renderTestsView } from '../views/tests-view.js';
 import { getCollapsedPanels, getPanelOrder, isPanelCollapsed, resetPanelCollapsed, setPanelCollapsed, setPanelOrder } from '../storage/dashboard-panels.js';
 
 function countOverdue() {
@@ -167,6 +168,7 @@ function getVisiblePanels() {
   const visible = {
     assignments: !collapsed.assignments,
     news: !collapsed.news,
+    tests: !collapsed.tests,
     grades: !collapsed.grades,
     info: !collapsed.info,
     schedule: !collapsed.schedule,
@@ -177,10 +179,10 @@ function getVisiblePanels() {
 }
 
 // --- Panel order & pinned layout ------------------------------------------
-// Three pinned panels bracket two draggable tiles (see reflowDashboardLayout):
-// News and Info stack in the LEFT column in the user's dragged order, Grades is
+// Three pinned panels bracket the draggable side tiles (see reflowDashboardLayout):
+// News, Tests and Info stack in the LEFT column in the user's dragged order, Grades is
 // pinned TALL on the right, Assignments is pinned TALL in the middle, and
-// Schedule is pinned as the full-width bottom row. Only News and Info live in
+// Schedule is pinned as the full-width bottom row. Only the side tiles live in
 // the order array. On a narrow single-column window the same order just stacks
 // vertically (Assignments hero row on top, then Grades, then the tiles, then
 // Schedule). A user drag keeps the in-flight tile arrangement in `dragOrder`
@@ -189,7 +191,8 @@ let dragOrder = null;   // in-flight reorder before dragend persists it
 let dragKey = null;     // panel currently being dragged
 
 // Panels that never move and never drag. The value is the left-column slot a
-// drop onto that panel targets: 0 = top, 1 = bottom.
+// drop onto that panel targets: 0 = top, 1 = bottom (i.e. the LAST slot, so it
+// stays correct however many tiles exist).
 const PINNED_PANELS = { assignments: 0, grades: 0, schedule: 1 };
 // Membership test deliberately does NOT read the value's truthiness: testing
 // `!PINNED_PANELS[key]` would treat `assignments: 0` as draggable and let a user
@@ -222,13 +225,12 @@ function reflowDashboardLayout(grid) {
   const showAssignments = visible.assignments && assignments;
   const grades = panels.get('grades');
   const showGrades = visible.grades && grades;
-  // The two draggable tiles fill the LEFT column, in order: slot 0 = top,
-  // slot 1 = bottom. Hiding a tile never re-distributes the other — the column
-  // just has one fewer tile, which stretches to fill. Only if BOTH are hidden
+  // The draggable tiles fill the LEFT column in order (News, Tests, Info by
+  // default). Hiding a tile never re-distributes the others — the column just
+  // has one fewer tile, which stretches to fill. Only if EVERY tile is hidden
   // does the column disappear and the pinned panels swell into the freed width.
   const tileKeys = getEffectivePanelOrder();
   const visibleTiles = tileKeys.filter((k) => visible[k]);
-  const slotVisible = (idx) => (tileKeys[idx] && visible[tileKeys[idx]]) ? tileKeys[idx] : null;
 
   if (bp === 'narrow') {
     // Single-column stack: Assignments hero row on top, then Grades on its own
@@ -256,22 +258,19 @@ function reflowDashboardLayout(grid) {
       }
     });
   } else {
-    // Wide / mid: three-zone middle — the two tiles stacked in the LEFT column,
+    // Wide / mid: three-zone middle — the side tiles stacked in the LEFT column,
     // Assignments TALL in the CENTER, Grades TALL on the RIGHT. Order of
     // appends matters: left column, THEN Assignments, THEN Grades, so the flex
-    // row puts the two pinned panels between them. If the left column has only
-    // one visible tile it stretches to the full column height; if both are
+    // row puts the pinned panels between them. A tile stretches to the
+    // column's full height when it's the only one visible; if every tile is
     // hidden the column is dropped and the pinned panels widen to fill.
     const middle = document.createElement('div');
     middle.className = 'fs-middle-zone';
     const leftCol = document.createElement('div');
     leftCol.className = 'fs-tile-column';
-    [0, 1].forEach((idx) => {
-      const k = slotVisible(idx);
-      if (k) {
-        const p = panels.get(k);
-        if (p) leftCol.appendChild(p);
-      }
+    visibleTiles.forEach((k) => {
+      const p = panels.get(k);
+      if (p) leftCol.appendChild(p);
     });
     if (leftCol.children.length) middle.appendChild(leftCol);
     if (showAssignments) middle.appendChild(assignments);
@@ -292,16 +291,16 @@ function reflowDashboardLayout(grid) {
 }
 
 // --- Panel drag / reorder --------------------------------------------------
-// Pointer-based drag on each panel's grip (see attachDragHandlers). The two
-// draggable tiles occupy the two slots of the LEFT column (order[0] = top,
-// [1] = bottom). Dragging a tile onto a slot SWAPS it with the tile currently
-// there, so the column always keeps its two slots and the pinned panels —
+// Pointer-based drag on each panel's grip (see attachDragHandlers). The
+// draggable tiles occupy the slots of the LEFT column (order[0] = top, ...
+// order[n-1] = bottom). Dragging a tile onto a slot SWAPS it with the tile
+// currently there, so the column always keeps its slots and the pinned panels —
 // Assignments (tall centre), Grades (tall right) and Schedule (bottom) — never
 // move. The in-flight arrangement lives in `dragOrder` and every pointer move
 // reflows the grid live; it is only persisted on release (one storage write,
 // one mirror to browser.storage.local) — dragging never writes storage.
 
-// Swap dragKey into `slot` (0-1) of `order`. Returns the new order, or null
+// Swap dragKey into `slot` of `order`. Returns the new order, or null
 // when nothing changed (already home / no movement).
 function swapDragIntoSlot(slot, order) {
   const from = order.indexOf(dragKey);
@@ -318,7 +317,7 @@ function attachDragHandlers(grid) {
     if (!key || panel.dataset.dragWired === '1') return;
     panel.dataset.dragWired = '1';
 
-    // Only the two side tiles drag — Assignments (pinned tall center), Grades
+    // Only the side tiles drag — Assignments (pinned tall center), Grades
     // (pinned tall right) and Schedule (pinned bottom row) are fixed. This is
     // POINTER-based, not HTML5 drag-and-drop: reflowDashboardLayout re-parents
     // panels on every drop-hover, which makes native DnD cancel itself
@@ -337,20 +336,22 @@ function attachDragHandlers(grid) {
         const start = { x: e.clientX, y: e.clientY };
 
         // Which slot is under the pointer? Dock → left-top, Assignments or
-        // Grades → left-top, Schedule → left-bottom; otherwise the tile's own
-        // slot (top half) or the slot below it (bottom half).
+        // Grades → left-top, Schedule → left-bottom (the LAST tile slot);
+        // otherwise the tile's own slot (top half) or the slot below it
+        // (bottom half, clamped at the last slot).
         const resolveSlot = (el, y) => {
           if (el.closest('.fs-panel-dock')) return 0;
           const target = el.closest('.fullscreen-panel');
           if (!target) return null;
           const tKey = panelKeyOf(target);
           if (!tKey || tKey === dragKey) return null;
-          if (isPinned(tKey)) return PINNED_PANELS[tKey];
-          const t = dragOrder ? dragOrder.indexOf(tKey) : -1;
+          const order = dragOrder || getPanelOrder();
+          if (isPinned(tKey)) return PINNED_PANELS[tKey] === 1 ? order.length - 1 : 0;
+          const t = order.indexOf(tKey);
           if (t === -1) return null;
           const rect = target.getBoundingClientRect();
           const below = (y - rect.top) > rect.height / 2;
-          return (below && t === 0) ? t + 1 : t;
+          return (below && t < order.length - 1) ? t + 1 : t;
         };
 
         const onMove = (ev) => {
@@ -452,6 +453,7 @@ function initDashboardPanels(listArea, grid) {
 const DOCK_DEFS = {
   assignments: 'Assignments',
   news: 'News',
+  tests: 'Tests',
   grades: 'Grades',
   info: 'Info',
   schedule: 'Schedule',
@@ -469,8 +471,8 @@ function makePanelDock() {
   all.textContent = '\u21F1 All'; // ⇱
   dock.appendChild(all);
 
-  // Pills mirror the layout: Assignments (pinned centre) first, then the two
-  // draggable tiles in their order, then the pinned Grades column, then
+  // Pills mirror the layout: Assignments (pinned centre) first, then the
+  // side tiles in their order, then the pinned Grades column, then
   // Schedule (pinned bottom).
   const pillKeys = ['assignments', ...getEffectivePanelOrder(), 'grades', 'schedule'];
   pillKeys.forEach((key) => {
@@ -620,6 +622,15 @@ export function renderDashboardView(listContainer, strip, searchRow, progressEl)
     const info = getScrapePanel(prevPanels, forceRebuild, 'info', 'Info', '', '',
       (body) => renderGeneralView(body, hiddenCourses));
 
+    // Left column tile: Tests — the tests/quizzes calendar (7-day strip +
+    // per-day list). Syllabus exam dates parsed during the regular scan plus
+    // user-added tests (see tests-view.js), so it needs no extra scan; the
+    // badge counts exams/tests landing in the next 7 days.
+    const testsSoon = countUpcomingTests();
+    const tests = getScrapePanel(prevPanels, forceRebuild, 'tests', 'Tests',
+      testsSoon > 0 ? String(testsSoon) : '', 'is-tests',
+      (body) => renderTestsView(body));
+
     // Right column, TALL: Grades. This panel absorbed the former standalone
     // "Recent Grades" feed -- `recent: true` asks renderGradesView to list each
     // course's most recent graded submissions in a column directly beneath that
@@ -638,7 +649,7 @@ export function renderDashboardView(listContainer, strip, searchRow, progressEl)
     const schedule = getScrapePanel(prevPanels, forceRebuild, 'schedule', 'Schedule', '', '',
       (body) => renderScheduleView(body));
 
-    grid.append(news, info, assignments.panel, grades, schedule);
+    grid.append(news, tests, info, assignments.panel, grades, schedule);
     listContainer.appendChild(grid);
     initDashboardPanels(listContainer, grid);
   } finally {
