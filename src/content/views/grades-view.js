@@ -1,11 +1,12 @@
 import { state } from '../state.js';
-import { applyGradeWeightChoice, saveWhatIfScores } from '../storage/caches.js';
+import { applyGradeWeightChoice } from '../storage/caches.js';
 import { getCourseColors, parseColorToRgba } from '../utils/colors.js';
 import { computeCourseProjection, computeFinalExamNeeds } from '../utils/grade-projections.js';
 import { computeCoursePercentagesWithWhatIf, formatScoreNum, gradeTierClass, percentageToGpa } from '../utils/grades.js';
 import { escapeHTML } from '../utils/text.js';
 import { applyCourseFilter } from '../views/upcoming-view.js';
 import { openCanvasViewer } from '../components/canvas-viewer.js';
+import { createGradeSimulator } from '../components/grade-simulator.js';
 
 export function updateGradeChangeBadge() {
     const badge = document.getElementById('grades-change-badge');
@@ -98,6 +99,57 @@ function recentByCourse(hiddenCourses) {
     return byCourse;
 }
 
+// The moving parts of one course summary card: the percentage, the letter,
+// the bar and the "need" line.
+//
+// It is a separate function so the simulator can call it again after a
+// scenario changes the course percentage — the numbers move, the card is not
+// rebuilt, and nothing steals the caret from the input being typed into.
+//
+// ONE need line, not two. "Need 92.3% on remaining for A" and
+// "🎯 91.7% on the final for A" were rendered as sibling .cg-need-line rows
+// on top of each other and read as a stutter. The final-exam figure is the
+// actionable one so it takes the visible line; the overall figure moves into
+// the tooltip rather than being dropped.
+function applyCourseCardNumbers(refs, courseKey, pct) {
+    if (!refs) return;
+    const has = pct !== null && pct !== undefined && !isNaN(pct);
+
+    if (has) {
+      refs.percent.textContent = `${pct.toFixed(1)}%`;
+      refs.percent.classList.remove('no-grade');
+      refs.letter.textContent = percentageToGpa(pct).letter;
+      refs.letter.style.display = '';
+      refs.barFill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+    } else {
+      refs.percent.textContent = 'No grades yet';
+      refs.percent.classList.add('no-grade');
+      refs.letter.textContent = '';
+      refs.letter.style.display = 'none';
+      refs.barFill.style.width = '0%';
+    }
+
+    const proj = computeCourseProjection(courseKey);
+    const needPct = proj && proj.needed.length > 0 ? proj.needed[0] : null;
+    const finalNeed = computeFinalExamNeeds(courseKey);
+    const finalPct = finalNeed && finalNeed.needs.length > 0 ? finalNeed.needs[0] : null;
+    if (finalPct || needPct) {
+      const tips = [];
+      if (needPct) tips.push(`Score ~${needPct.pct}% on everything still ungraded for a ${needPct.letter}`);
+      if (finalPct) tips.push(`On the ${finalNeed.finalName} (${finalNeed.worthLabel}): ~${finalNeed.needs.map(n => `${n.pct}% for ${n.letter}`).join(', ')}`);
+      const text = finalPct
+        ? `🎯 ${finalPct.pct}% on ${finalNeed.finalName} for ${finalPct.letter}`
+        : `Need ${needPct.pct}% on remaining for ${needPct.letter}`;
+      refs.needLine.textContent = text;
+      refs.needLine.title = tips.join(' · ');
+      refs.needLine.style.display = '';
+    } else {
+      refs.needLine.textContent = '';
+      refs.needLine.title = '';
+      refs.needLine.style.display = 'none';
+    }
+}
+
 export function renderGradesView(listContainer, hiddenCourses, opts) {
     const withRecent = !!(opts && opts.recent);
     listContainer.innerHTML = '';
@@ -107,13 +159,13 @@ export function renderGradesView(listContainer, hiddenCourses, opts) {
     const rerender = () => renderGradesView(listContainer, hiddenCourses, opts);
 
     const coursePcts = computeCoursePercentagesWithWhatIf(hiddenCourses);
-    const gpaPoints = [];
     const courseCardsData = [];
+    // The live-updatable pieces of each course summary card, keyed by course.
+    const courseCardRefs = new Map();
 
     Object.entries(coursePcts).forEach(([cKey, pct]) => {
       if (pct !== null && !isNaN(pct)) {
         const info = percentageToGpa(pct);
-        gpaPoints.push(info.gpa);
         courseCardsData.push({ courseKey: cKey, pct: pct, letter: info.letter, hasGrade: true });
       } else {
         courseCardsData.push({ courseKey: cKey, pct: null, letter: '—', hasGrade: false });
@@ -130,30 +182,34 @@ export function renderGradesView(listContainer, hiddenCourses, opts) {
       return a.courseKey.localeCompare(b.courseKey);
     });
 
-    const averageGpa = gpaPoints.length > 0
-    ? (gpaPoints.reduce((a, b) => a + b, 0) / gpaPoints.length).toFixed(2)
-    : '—';
-    const avgGpaTier = gpaPoints.length > 0 ? gradeTierClass((parseFloat(averageGpa) / 4) * 100) : 'tier-none';
-
-    // GPA Header
+    // GPA Header. The card is rendered empty and filled in by
+    // refreshGradeNumbers() below, which is also what the simulator calls
+    // after every scenario change — so the ring, the number and the
+    // "What-If" flag all have exactly one place that knows how to set them.
     const gpaCard = document.createElement('div');
-    gpaCard.className = `gpa-card ${avgGpaTier}`;
-    const hasWhatIfActive = Object.keys(state.whatIfScores).length > 0;
-    const courseCountLabel = gpaPoints.length > 0
-    ? `Based on ${gpaPoints.length} graded course${gpaPoints.length === 1 ? '' : 's'}`
-    : 'No grades posted yet';
-    const gpaRingPct = gpaPoints.length > 0 ? Math.max(0, Math.min(100, (parseFloat(averageGpa) / 4) * 100)) : 0;
+    gpaCard.className = 'gpa-card tier-none';
     gpaCard.innerHTML = `
     <div class="gpa-info-left">
-    <span class="gpa-label">Current GPA${hasWhatIfActive ? ' <span class="gpa-whatif-flag">What-If</span>' : ''}</span>
-    <span class="gpa-sub">${courseCountLabel}</span>
+    <span class="gpa-label">Current GPA<span class="gpa-whatif-flag" style="display:none">What-If</span></span>
+    <span class="gpa-sub"></span>
     </div>
     <div class="gpa-ring-wrap">
-    <div class="gpa-ring" style="--gpa-pct:${gpaRingPct}"></div>
-    <div class="gpa-ring-value">${averageGpa}</div>
+    <div class="gpa-ring" style="--gpa-pct:0"></div>
+    <div class="gpa-ring-value"></div>
     </div>
     `;
     listContainer.appendChild(gpaCard);
+
+    // The parts of the GPA card a scenario has to move. Holding on to them
+    // is what lets a what-if edit update the GPA live, instead of forcing a
+    // full panel re-render (which used to eat the caret mid-keystroke).
+    const gpaRefs = {
+      card: gpaCard,
+      flag: gpaCard.querySelector('.gpa-whatif-flag'),
+      sub: gpaCard.querySelector('.gpa-sub'),
+      ring: gpaCard.querySelector('.gpa-ring'),
+      value: gpaCard.querySelector('.gpa-ring-value'),
+    };
 
     // Grade-change alerts: new/changed scores since the last scan. Dismissible.
     if ((state.gradeChangeAlerts || []).length > 0) {
@@ -253,55 +309,40 @@ const pickerHtml = weightOptions
         ? `<div class="cg-weights">${weightsBar}${pickerHtml}</div>`
         : '';
 
-        if (item.hasGrade) {
-          const barPct = Math.max(0, Math.min(100, item.pct));
-          // ONE need line, not two. "Need 92.3% on remaining for A" and
-          // "🎯 91.7% on the final for A" were rendered as sibling .cg-need-line
-          // rows on top of each other and read as a stutter. The final-exam figure
-          // is the actionable one so it takes the visible line; the overall figure
-          // moves into the tooltip rather than being dropped.
-          const needPct = proj && proj.needed.length > 0 ? proj.needed[0] : null;
-          const finalNeed = computeFinalExamNeeds(item.courseKey);
-          const finalPct = finalNeed && finalNeed.needs.length > 0 ? finalNeed.needs[0] : null;
-          let needLine = '';
-          if (finalPct || needPct) {
-            const tips = [];
-            if (needPct) tips.push(`Score ~${needPct.pct}% on everything still ungraded for a ${needPct.letter}`);
-            if (finalPct) tips.push(`On the ${finalNeed.finalName} (${finalNeed.worthLabel}): ~${finalNeed.needs.map(n => `${n.pct}% for ${n.letter}`).join(', ')}`);
-            const text = finalPct
-              ? `🎯 ${finalPct.pct}% on ${finalNeed.finalName} for ${finalPct.letter}`
-              : `Need ${needPct.pct}% on remaining for ${needPct.letter}`;
-            needLine = `<div class="cg-need-line" title="${escapeHTML(tips.join(' · '))}">${escapeHTML(text)}</div>`;
-          }
-          const courseName = String((state.cachedCourseMap[item.courseKey] || {}).name || '').trim();
-          const nameLine = courseName
-            ? `<div class="cg-course-name" title="${escapeHTML(courseName)}">${escapeHTML(courseName)}</div>`
-            : '';
-          cCard.innerHTML = `
-          <div class="cg-top-row">
-          <span class="cg-name">${escapeHTML(item.courseKey)}</span>
-          <div class="cg-score-wrap">
-          <span class="cg-percent">${item.pct.toFixed(1)}%</span>
-          <span class="cg-letter">${item.letter}</span>
-          </div>
-          </div>
-          ${nameLine}
-          <div class="cg-bar-bg"><div class="cg-bar-fill" style="width:${barPct}%"></div></div>
-          ${needLine}
-          ${weightsRow}
-          `;
-        } else {
-          cCard.innerHTML = `
-          <div class="cg-top-row">
-          <span class="cg-name">${escapeHTML(item.courseKey)}</span>
-          <div class="cg-score-wrap">
-          <span class="cg-percent no-grade">No grades yet</span>
-          </div>
-          </div>
-          <div class="cg-bar-bg"><div class="cg-bar-fill" style="width:0%"></div></div>
-          ${weightsRow}
-          `;
-        }
+        // ONE card shape for every course, graded or not. The two branches
+        // used to render different markup, which meant a course that gained
+        // a grade mid-session (a scenario typed into the simulator) could
+        // not be updated in place — the markup had to be swapped. One shape
+        // means every number below is just a textContent write.
+        const barPct = item.hasGrade ? Math.max(0, Math.min(100, item.pct)) : 0;
+        const courseName = String((state.cachedCourseMap[item.courseKey] || {}).name || '').trim();
+        const nameLine = courseName
+          ? `<div class="cg-course-name" title="${escapeHTML(courseName)}">${escapeHTML(courseName)}</div>`
+          : '';
+        cCard.innerHTML = `
+        <div class="cg-top-row">
+        <span class="cg-name">${escapeHTML(item.courseKey)}</span>
+        <div class="cg-score-wrap">
+        <span class="cg-percent${item.hasGrade ? '' : ' no-grade'}">${item.hasGrade ? `${item.pct.toFixed(1)}%` : 'No grades yet'}</span>
+        <span class="cg-letter"${item.hasGrade ? '' : ' style="display:none"'}>${escapeHTML(item.letter)}</span>
+        </div>
+        </div>
+        ${nameLine}
+        <div class="cg-bar-bg"><div class="cg-bar-fill" style="width:${barPct}%"></div></div>
+        <div class="cg-need-line"></div>
+        ${weightsRow}
+        `;
+
+        // The moving parts of this card, kept for the live what-if update.
+        courseCardRefs.set(item.courseKey, {
+          card: cCard,
+          filtering: isActiveFilter,
+          percent: cCard.querySelector('.cg-percent'),
+          letter: cCard.querySelector('.cg-letter'),
+          barFill: cCard.querySelector('.cg-bar-fill'),
+          needLine: cCard.querySelector('.cg-need-line'),
+        });
+        applyCourseCardNumbers(courseCardRefs.get(item.courseKey), item.courseKey, item.pct);
 
         cCard.addEventListener('click', () => {
           applyCourseFilter(item.courseKey);
@@ -408,175 +449,70 @@ const pickerHtml = weightOptions
       listContainer.appendChild(stack);
     }
 
-    // What-If Matrix
-    const tasksByCourse = {};
-    Object.entries(state.cachedCourseMap).forEach(([cKey, c]) => {
-      if (hiddenCourses.includes(cKey)) return;
-      if (state.activeCourseFilter !== 'ALL' && state.activeCourseFilter !== cKey) return;
-
-      const validTasks = (c.tasks || []).filter(t => t.points && t.points > 0);
-      if (validTasks.length > 0) {
-        tasksByCourse[cKey] = validTasks;
-      }
-    });
-
-    if (Object.keys(tasksByCourse).length > 0) {
-      const matrixCard = document.createElement('div');
-      matrixCard.className = state.whatIfExpanded ? 'whatif-matrix-card' : 'whatif-matrix-card is-collapsed';
-
-      const topBar = document.createElement('div');
-      topBar.className = 'whatif-top-bar';
-      const simCount = Object.keys(state.whatIfScores).length;
-      topBar.innerHTML = `
-      <button type="button" class="whatif-toggle" id="whatif-toggle" aria-expanded="${state.whatIfExpanded ? 'true' : 'false'}">
-      <span class="whatif-chevron">▸</span>
-      <span class="whatif-heading">⚡ What-If Grade Simulator</span>
-      <span class="whatif-collapsed-note">${hasWhatIfActive ? `· ${simCount} simulation${simCount === 1 ? '' : 's'} active` : '· simulate grades to see the impact'}</span>
-      </button>
-      ${hasWhatIfActive ? '<button type="button" class="whatif-clear-all-btn" id="whatif-clear-all-btn">Clear Simulations</button>' : ''}
-      `;
-      matrixCard.appendChild(topBar);
-
-      const matrixBody = document.createElement('div');
-      matrixBody.className = 'whatif-matrix-body';
-      matrixCard.appendChild(matrixBody);
-
-      Object.entries(tasksByCourse).forEach(([cKey, taskList]) => {
-        const groupEl = document.createElement('div');
-        groupEl.className = 'whatif-course-group';
-
-        const curPct = coursePcts[cKey];
-        const projection = computeCourseProjection(cKey);
-        const weightedHint = projection && projection.weighted && projection.weightedPct != null ? ' · syllabus-weighted' : '';
-        const pctLabel = curPct !== null ? `${curPct.toFixed(1)}% (${percentageToGpa(curPct).letter})${weightedHint}` : 'No grades yet';
-
-        const cHeader = document.createElement('div');
-        cHeader.className = 'whatif-course-header';
-        cHeader.innerHTML = `
-        <span class="whatif-course-tag">${escapeHTML(cKey)}</span>
-        <span class="whatif-projected-badge">Projected: ${pctLabel}</span>
-        `;
-        groupEl.appendChild(cHeader);
-
-        // Syllabus grade weights + "need on remaining" projection for this
-        // course. Weights come from parseGradeWeights() in task-loader; the
-        // need list is computed by grade-projections.js.
-        if (projection) {
-          let blockHtml = '';
-          if (Array.isArray(projection.weights) && projection.weights.length > 0) {
-            blockHtml += `<div class="gci-weights-row">${projection.weights.map(w => `<span class="gci-weight-chip" title="Syllabus weight">${escapeHTML(w.label)} ${w.pct}%</span>`).join('')}</div>`;
-          }
-          if (projection.needed.length > 0) {
-            blockHtml += `<div class="whatif-need-line">Need on remaining: ${projection.needed.map(n => `<span class="whatif-need-chip" title="~${n.pct}% on remaining work for a ${n.letter}">${n.letter} ${n.pct}%</span>`).join('')}</div>`;
-          } else if (projection.graded && projection.hasRemaining) {
-            blockHtml += `<div class="whatif-need-line">🚀 Remaining work already secured for every tier.</div>`;
-          } else if (!projection.graded) {
-            blockHtml += `<div class="whatif-need-line">No graded work yet — nothing to project.</div>`;
-          }
-          const finalNeed = computeFinalExamNeeds(cKey);
-          if (finalNeed && finalNeed.needs.length > 0) {
-            blockHtml += `<div class="whatif-need-line">🎯 ${escapeHTML(finalNeed.finalName)} (${escapeHTML(finalNeed.worthLabel)}): ${finalNeed.needs.map(n => `<span class="whatif-need-chip" title="~${n.pct}% on the final for a ${n.letter}">${n.letter} ${n.pct}%</span>`).join('')}</div>`;
-          }
-          if (blockHtml) {
-            const projEl = document.createElement('div');
-            projEl.className = 'whatif-projection-block';
-            projEl.innerHTML = blockHtml;
-            groupEl.appendChild(projEl);
-          }
-        }
-
-        const listEl = document.createElement('div');
-        listEl.className = 'whatif-items-list';
-
-        taskList.forEach(task => {
-          const sim = state.whatIfScores[task.id];
-          const hasSim = !!sim;
-
-          const row = document.createElement('div');
-          row.className = `whatif-row-card ${hasSim ? 'has-sim' : ''}`;
-          row.innerHTML = `
-          <div class="whatif-item-left">
-          <span class="whatif-item-title" title="${escapeHTML(task.title)}">${escapeHTML(task.title)}</span>
-          <span class="whatif-item-pts">${task.points} pts possible</span>
-          </div>
-          <div class="whatif-item-right">
-          <input type="number" step="0.5" class="whatif-matrix-input" data-task-id="${escapeHTML(task.id)}" placeholder="—" value="${hasSim ? sim.score : ''}" />
-          ${hasSim ? `<button type="button" class="whatif-row-reset" data-reset-id="${escapeHTML(task.id)}" title="Remove simulation">×</button>` : ''}
-          </div>
-          `;
-
-          const inputEl = row.querySelector('.whatif-matrix-input');
-          inputEl.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            if (!isNaN(val)) {
-              state.whatIfScores[task.id] = {
-                score: val,
-                pointsPossible: task.points,
-                courseKey: cKey
-              };
-            } else {
-              delete state.whatIfScores[task.id];
-            }
-            saveWhatIfScores();
-            rerender();
-            // Re-rendering recreates every input, which would drop focus after
-            // the first keystroke — put the caret back so multi-digit scores
-            // can actually be typed.
-            const refocused = Array.from(listContainer.querySelectorAll('.whatif-matrix-input'))
-              .find(el => el.dataset.taskId === task.id);
-            if (refocused) {
-              refocused.focus();
-              // setSelectionRange throws InvalidStateError on a number input
-              // (the spec only allows it on text-like types), so this has to be
-              // guarded — it fired once per keystroke on every what-if edit.
-              const caret = refocused.value.length;
-              try {
-                refocused.setSelectionRange(caret, caret);
-              } catch (e) {
-                refocused.value = refocused.value;
-              }
-            }
-          });
-
-          const rowResetBtn = row.querySelector('.whatif-row-reset');
-          if (rowResetBtn) {
-            rowResetBtn.addEventListener('click', () => {
-              delete state.whatIfScores[task.id];
-              saveWhatIfScores();
-              rerender();
-            });
-          }
-
-          listEl.appendChild(row);
-        });
-
-        groupEl.appendChild(listEl);
-        matrixBody.appendChild(groupEl);
+    // ---- Live grade refresh -------------------------------------------------
+    // Recompute every course percentage from the current what-if scenarios and
+    // push the result into the GPA card and the course summary cards, in
+    // place. This is what lets a scenario update the whole panel live: no
+    // re-render, so the caret stays where the student put it.
+    function refreshGradeNumbers() {
+      const pcts = computeCoursePercentagesWithWhatIf(hiddenCourses);
+      const points = [];
+      Object.entries(pcts).forEach(([, pct]) => {
+        if (pct !== null && !isNaN(pct)) points.push(percentageToGpa(pct).gpa);
       });
+      const avg = points.length > 0
+        ? (points.reduce((a, b) => a + b, 0) / points.length).toFixed(2)
+        : '—';
+      const tier = points.length > 0 ? gradeTierClass((parseFloat(avg) / 4) * 100) : 'tier-none';
+      const ringPct = points.length > 0 ? Math.max(0, Math.min(100, (parseFloat(avg) / 4) * 100)) : 0;
 
-      const toggleBtn = matrixCard.querySelector('#whatif-toggle');
-      if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-          state.whatIfExpanded = !state.whatIfExpanded;
-          rerender();
-        });
-      }
+      gpaRefs.card.className = `gpa-card ${tier}`;
+      gpaRefs.ring.style.setProperty('--gpa-pct', ringPct);
+      gpaRefs.value.textContent = avg;
+      gpaRefs.sub.textContent = points.length > 0
+        ? `Based on ${points.length} graded course${points.length === 1 ? '' : 's'}`
+        : 'No grades posted yet';
+      gpaRefs.flag.style.display = Object.keys(state.whatIfScores).length > 0 ? '' : 'none';
 
-      const clearAllBtn = matrixCard.querySelector('#whatif-clear-all-btn');
-      if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', () => {
-          state.whatIfScores = {};
-          saveWhatIfScores();
-          rerender();
-        });
-      }
-
-      listContainer.appendChild(matrixCard);
+      courseCardRefs.forEach((refs, cKey) => {
+        const pct = pcts[cKey];
+        const has = pct !== null && pct !== undefined && !isNaN(pct);
+        // The tier colour travels with the percentage, so a scenario that
+        // lifts a course from a C to a B recolours the card too.
+        refs.card.className = `course-grade-summary-card ${has ? gradeTierClass(pct) : 'tier-none'} ${refs.filtering ? 'is-filtering' : ''}`;
+        applyCourseCardNumbers(refs, cKey, pct);
+      });
     }
+
+    // ---- Grade Simulator ----------------------------------------------------
+    // The simulator sits at the bottom of the panel: it is a tool you reach
+    // for, not a summary you read. It renders once and then updates itself
+    // in place, so typing a score never rebuilds the panel around it.
+    const simulatorCourses = Object.keys(state.cachedCourseMap).filter(cKey => {
+      if (hiddenCourses.includes(cKey)) return false;
+      if (state.activeCourseFilter !== 'ALL' && state.activeCourseFilter !== cKey) return false;
+      const course = state.cachedCourseMap[cKey];
+      return ((course && course.tasks) || []).some(t => t.points && t.points > 0);
+    });
+    // Scenarios left over from earlier still deserve a way in, even if
+    // everything they pointed at has since been graded.
+    const hasScenarios = Object.keys(state.whatIfScores).length > 0;
+
+    if (simulatorCourses.length > 0 || hasScenarios) {
+      const simulator = createGradeSimulator({
+        hiddenCourses,
+        onChange: refreshGradeNumbers,
+      });
+      listContainer.appendChild(simulator.element);
+    }
+
+    // Fill the GPA card in now that every course card exists. The same
+    // function is what the simulator calls after each scenario change.
+    refreshGradeNumbers();
 
     // The per-submission "Recent Feedback" list now lives only in the
     // bottom-left Recent Grades dashboard panel, so this right-hand Grades
-    // panel keeps just the GPA ring, course summaries and the What-If matrix.
+    // panel keeps just the GPA ring, the course summaries and the simulator.
   }
 
 // opts.hideCourse suppresses the course tag: used when the card is rendered

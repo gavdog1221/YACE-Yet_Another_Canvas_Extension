@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { computeWeightedCoursePct } from '../utils/grade-projections.js';
+import { buildCourseModel } from '../utils/grade-projections.js';
 
 export function percentageToGpa(pct) {
     if (pct >= 93) return { gpa: 4.0, letter: 'A' };
@@ -29,44 +29,26 @@ export function formatScoreNum(n) {
     return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
   }
 
+// The course percentage for every visible course, with the what-if
+// scenarios folded in.
+//
+// The number is the "grade so far": it counts the work that HAS a score
+// (posted or simulated) and leaves the still-open work out, exactly like
+// Canvas does. A simulation on an assignment that has since been graded
+// REPLACES the posted score instead of being added on top of it — the old
+// calculator summed the two and double counted anything that had come back
+// in the meantime.
 export function computeCoursePercentagesWithWhatIf(hiddenCourses) {
-    const courseTotals = {};
-
-    (state.cachedGrades || []).forEach(g => {
-      if (hiddenCourses.includes(g.courseKey)) return;
-      if (g.score !== null && g.pointsPossible && g.pointsPossible > 0) {
-        if (!courseTotals[g.courseKey]) courseTotals[g.courseKey] = { earned: 0, possible: 0 };
-        courseTotals[g.courseKey].earned += g.score;
-        courseTotals[g.courseKey].possible += g.pointsPossible;
-      }
-    });
-
-    Object.entries(state.whatIfScores).forEach(([taskId, sim]) => {
-      if (hiddenCourses.includes(sim.courseKey)) return;
-      if (sim.score !== null && sim.pointsPossible > 0) {
-        if (!courseTotals[sim.courseKey]) courseTotals[sim.courseKey] = { earned: 0, possible: 0 };
-        courseTotals[sim.courseKey].earned += sim.score;
-        courseTotals[sim.courseKey].possible += sim.pointsPossible;
-      }
-    });
-
     const activeKeys = Object.keys(state.cachedCourseMap).filter(k => !hiddenCourses.includes(k));
     const result = {};
 
     activeKeys.forEach(cKey => {
-      // When the syllabus spells out a grade breakdown, weight categories by
-      // those percentages instead of assuming every point counts equally.
-      // Falls back to the equal-points sum when unusable.
-      const weighted = computeWeightedCoursePct(cKey);
-      if (weighted !== null) {
-        result[cKey] = weighted;
+      const model = buildCourseModel(cKey);
+      if (model && model.soFarPct !== null) {
+        result[cKey] = model.soFarPct;
         return;
       }
-
-      const totals = courseTotals[cKey];
-      if (totals && totals.possible > 0) {
-        result[cKey] = Math.round((totals.earned / totals.possible) * 1000) / 10;
-      } else if (state.cachedCoursePercentages[cKey] !== undefined && state.cachedCoursePercentages[cKey] !== null) {
+      if (state.cachedCoursePercentages[cKey] !== undefined && state.cachedCoursePercentages[cKey] !== null) {
         result[cKey] = state.cachedCoursePercentages[cKey];
       } else {
         result[cKey] = null;

@@ -31,6 +31,10 @@ export const state = {
   // flag is in-memory only so typing in the matrix mid-session doesn't
   // collapse it on every re-render, but it resets to collapsed per load.
   whatIfExpanded: false,
+  // The letter the student is aiming for. Drives the "you need X% for an A"
+  // lines and the one-click "fill for target" shortcut. In-memory only —
+  // it is a working preference, not part of the saved scenario.
+  whatIfTarget: 'A',
   gradeChangeAlerts: [],
   domCourseColors: {},
   cachedAnnouncements: [],

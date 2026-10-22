@@ -206,43 +206,6 @@
   font-size: 10px !important; font-weight: 600 !important;
   color: var(--text-secondary) !important;
 }
-.gci-weights-row {
-  display: flex !important; flex-wrap: wrap !important; gap: 5px !important;
-  margin-top: 6px !important;
-}
-.gci-weight-chip {
-  display: inline-flex !important; align-items: center !important;
-  font-size: 9.5px !important; font-weight: 700 !important;
-  color: var(--text-primary) !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-radius: 0; padding: 2px 8px !important;
-  white-space: nowrap !important;
-}
-
-/* "Need on remaining" projection chips inside the what-if simulator */
-.whatif-projection-block {
-  display: flex !important; flex-direction: column !important; gap: 6px !important;
-  margin: 7px 4px 8px !important;
-  padding: 7px 9px !important;
-  background: rgba(0, 0, 0, 0.16) !important;
-  border-radius: 0;
-  border: 1px dashed rgba(255, 255, 255, 0.12) !important;
-}
-.whatif-projection-block .gci-weights-row { margin-top: 0 !important; }
-.whatif-need-line {
-  display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 4px !important;
-  font-size: 10px !important; font-weight: 700 !important; color: var(--text-secondary) !important;
-}
-.whatif-need-chip {
-  font-size: 9.5px !important; font-weight: 800 !important;
-  color: var(--primary-accent) !important;
-  background: var(--accent-soft, rgba(10, 132, 255, 0.16)) !important;
-  border-radius: 0; padding: 2px 7px !important;
-  white-space: nowrap !important;
-  font-family: ui-monospace, SFMono-Regular, monospace !important;
-}
-
 /* Condensed need line on the course-grade summary cards */
 .cg-need-line {
   margin-top: 6px !important;

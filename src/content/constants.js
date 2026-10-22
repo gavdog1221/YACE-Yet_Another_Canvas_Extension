@@ -11,7 +11,10 @@ export const STORAGE_KEY_THEME = 'canvas_mod_tasks_theme_v1';
 export const STORAGE_KEY_GRADES_CACHE = 'canvas_mod_tasks_grades_cache_v5';
 export const STORAGE_KEY_GRADES_CACHE_TIME = 'canvas_mod_tasks_grades_cache_time_v5';
 export const STORAGE_KEY_COURSE_PERCENTAGES = 'canvas_mod_tasks_course_pcts_v1';
-export const STORAGE_KEY_WHATIF = 'canvas_mod_tasks_whatif_scores_v1';
+// v2: the simulator stores the typed PERCENTAGE alongside the points
+// (`{ score, pct, pointsPossible, courseKey }`) so it can show both without
+// guessing which one the student typed.
+export const STORAGE_KEY_WHATIF = 'canvas_mod_tasks_whatif_scores_v2';
 export const STORAGE_KEY_DOM_COLORS = 'canvas_mod_tasks_dom_colors_v2';
 export const STORAGE_KEY_STARRED = 'canvas_mod_tasks_starred_v1';
 export const STORAGE_KEY_STARRED_ANNOUNCEMENTS = 'canvas_mod_tasks_starred_announcements_v1';
