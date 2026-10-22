@@ -72,7 +72,7 @@ export function renderOptionsView(container) {
     </section>
 
     <section class="opt-section">
-    <h3 class="opt-section-title">🌈 Class Colors</h3>
+    <h3 class="opt-section-title">Class Colors</h3>
     <p class="opt-hint">Give every course its own accent color across cards, grades, news and filters. Off keeps today's monochrome look; on, classes auto-color from your Canvas dashboard cards (with a fallback palette) until you pick one yourself.</p>
     <div class="opt-toggles">
     <label class="opt-toggle">
