@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { computeTimeConflicts, formatTime, parseMeetDays, scheduleLabel, toMinutes } from '../../shared/schedule-conflicts.js';
 import { getHiddenCourses } from '../storage/hidden-courses.js';
-import { CUSTOM_COLOR_PRESETS, STORAGE_KEY_SCHEDULE_CACHE } from '../constants.js';
+import { CUSTOM_COLOR_PRESETS, STORAGE_KEY_SCHEDULE_CACHE, STORAGE_KEY_SCHEDULE_SELECTIONS } from '../constants.js';
 import { escapeHTML, normalizeCourseCode } from '../utils/text.js';
 import { parseColorToRgba } from '../utils/colors.js';
 
@@ -12,9 +12,13 @@ import { parseColorToRgba } from '../utils/colors.js';
 //   1. FETCH_COURSE_SEARCH { query: code, termCode } → current-term sections
 //   2. FETCH_WEBCAT_CRN { crns, termCode } → meeting days/start/end/building
 // The current term is derived from today's date (UNH scheme: <year><season>,
-// fall=10, january=30, spring=50, summer=70). Results are cached per
-// (term · course-set) so interactive dashboard re-renders never refetch, and
-// the whole panel renders whenever a loadTasks rebuild reaches it.
+// fall=10, january=30, spring=50, summer=70). Every scraped lecture/lab is
+// kept, and the "Choose sections" picker lets the user pick which lecture —
+// and, when the course has them, which lab — actually goes on the timetable.
+// Those CRN choices persist per term in localStorage
+// (STORAGE_KEY_SCHEDULE_SELECTIONS). Results are cached per (term · course-set)
+// so interactive dashboard re-renders never refetch, and the whole panel
+// renders whenever a loadTasks rebuild reaches it.
 //
 // This is deliberately independent of the WebCat Reg tab — that one holds
 // CRNs for *registering for next semester*, not the current schedule.
@@ -42,10 +46,77 @@ function termLabel(code) {
 }
 
 // "MATH 425 (01) - Calculus II" -> "MATH 425" (lowercase-tolerant, honors
-// letter kept). '' when the node isn't a course-section title.
+// letter kept). Section tokens may be "01", "L05", "NL2" or "M1". '' when the
+// node isn't a course-section title.
 function parseCourseCode(title) {
-    const m = String(title || '').match(/^([A-Za-z]{2,5}\s*\d{3}[A-Za-z]?)\s*\(\d{2}\)/);
+    const m = String(title || '').match(/^([A-Za-z]{2,5}\s*\d{3}[A-Za-z]?)\s*\([A-Za-z0-9]{1,5}\)/);
     return m ? m[1].replace(/\s+/g, ' ').toUpperCase() : '';
+}
+
+// Sections carry their section token in `code` ("CHEM 403-L05"). The base
+// catalog code is everything before that suffix, so lectures and labs from the
+// same course stay in one picker group.
+function catalogBaseCode(code) {
+    const m = String(code || '').toUpperCase().match(/^([A-Z]{2,5}\s*\d{3})(?:-[A-Z0-9]{1,5})?$/);
+    return m ? m[1] : normalizeCourseCode(code);
+}
+
+function sectionToken(section) {
+    if (section && section.section) return String(section.section);
+    const m = String((section && section.code) || '').match(/-([A-Za-z0-9]{1,5})$/);
+    return m ? m[1].toUpperCase() : '';
+}
+
+// Labs are marked by the section component ("... Lab") on courses.unh.edu.
+// The L-prefixed token convention (L01/LM1; not NL1) is a fallback for older
+// cached payloads and departments whose subtitle omits "Lab".
+function isLabSection(section) {
+    const component = String((section && section.component) || '');
+    if (/\blab(?:oratory)?\b/i.test(component)) return true;
+    return /^L[A-Z]?\d+$/i.test(sectionToken(section));
+}
+
+function compareSections(a, b) {
+    const ta = sectionToken(a);
+    const tb = sectionToken(b);
+    const na = /^\d+$/.test(ta);
+    const nb = /^\d+$/.test(tb);
+    if (na !== nb) return na ? -1 : 1;
+    if (na && nb) return parseInt(ta, 10) - parseInt(tb, 10);
+    return ta.localeCompare(tb, undefined, { numeric: true });
+}
+
+function loadSelections() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY_SCHEDULE_SELECTIONS) || '{}');
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+function selectionKey(termCode, courseCode) {
+    return `${termCode}|${courseCode}`;
+}
+
+// Persist one course's lecture/lab choice. Choices are scoped to the term so
+// next semester starts fresh instead of silently applying old CRNs.
+function saveSelection(termCode, courseCode, kind, crn) {
+    const all = loadSelections();
+    const key = selectionKey(termCode, courseCode);
+    const current = all[key] || {};
+    if (kind === 'lecture') {
+        if (crn) current.lecture = String(crn);
+        else delete current.lecture;
+    } else if (kind === 'lab') {
+        if (crn) current.lab = String(crn);
+        else delete current.lab;
+    }
+    if (current.lecture || current.lab) all[key] = current;
+    else delete all[key];
+    try {
+        localStorage.setItem(STORAGE_KEY_SCHEDULE_SELECTIONS, JSON.stringify(all));
+    } catch (e) {}
 }
 
 // The courses the user is currently in on Canvas, reduced to their catalog
@@ -81,17 +152,25 @@ async function fetchSearchMatches(code, termCode) {
     }
 }
 
-async function fetchSection(crn, termCode) {
-    try {
-        const msg = await browser.runtime.sendMessage({ type: 'FETCH_WEBCAT_CRN', crns: [crn], termCode });
-        if (msg && msg.success && Array.isArray(msg.sections) && msg.sections[0]) return msg.sections[0];
-    } catch (e) {}
-    return null;
+// Fetch meeting details for a batch of CRNs. The background caps each message
+// at 12 CRNs, so chunk and run the chunks in parallel — lab courses can have
+// 20+ sections and waiting for them one at a time is noticeably slow.
+async function fetchSections(crns, termCode) {
+    const chunks = [];
+    for (let i = 0; i < crns.length; i += 12) chunks.push(crns.slice(i, i + 12));
+    const batches = await Promise.all(chunks.map(async chunk => {
+        try {
+            const msg = await browser.runtime.sendMessage({ type: 'FETCH_WEBCAT_CRN', crns: chunk, termCode });
+            if (msg && msg.success && Array.isArray(msg.sections)) return msg.sections;
+        } catch (e) {}
+        return [];
+    }));
+    return batches.flat();
 }
 
 // Search each current course code and pull meeting details for every section
-// in the current term. Runs the per-course searches in parallel; the
-// background's course-page cache absorbs repeated CRNs.
+// in the current term — lectures and labs. Runs the per-course searches in
+// parallel; the background's course-page cache absorbs repeated CRNs.
 async function loadScheduleSections(courseCodes, termCode, force) {
     const cacheKey = `${termCode}|${courseCodes.join(',')}`;
     if (!force) {
@@ -105,28 +184,25 @@ async function loadScheduleSections(courseCodes, termCode, force) {
     const sections = [];
     await Promise.all(courseCodes.map(async code => {
         const matches = await fetchSearchMatches(code, termCode);
-        for (const m of matches) {
-            if (seenCrn.has(m.crn)) continue;
+        const wanted = matches.filter(m => {
+            if (seenCrn.has(m.crn)) return false;
             seenCrn.add(m.crn);
-            const section = await fetchSection(m.crn, termCode);
-            if (!section) continue;
+            return true;
+        });
+        if (!wanted.length) return;
+        const fetched = await fetchSections(wanted.map(m => m.crn), termCode);
+        fetched.forEach(section => {
+            if (!section) return;
             if (!section.code) section.code = code;
             sections.push(section);
-        }
+        });
     }));
 
-    // Dedupe "same lecture, many sections" noise: identical code+days+time
-    // blocks collapse to one, keeping genuinely different meetings visible.
-    const seenBlock = new Set();
-    const unique = sections.filter(s => {
-        const key = `${normalizeCourseCode(s.code)}|${parseMeetDays(s.days).join('')}|${s.start}|${s.end}`;
-        if (seenBlock.has(key)) return false;
-        seenBlock.add(key);
-        return true;
-    });
-
-    saveCache({ key: cacheKey, savedAt: Date.now(), sections: unique });
-    return unique;
+    // Keep every section. The schedule tab's per-course pickers need the full
+    // list; collapsing identical code+time blocks here would make alternative
+    // sections (and most labs) impossible to choose.
+    saveCache({ key: cacheKey, savedAt: Date.now(), sections });
+    return sections;
 }
 
 function loadCache() {
@@ -197,18 +273,116 @@ function buildGridData(sections, hiddenCourses) {
     };
 }
 
-function renderScheduleGrid(container, sections, courseCount, termCode) {
+// Group scraped sections by catalog code, splitting lectures from labs so the
+// picker can offer one of each. Course codes with no scraped sections still
+// produce an (empty) group, which surfaces "No sections found" in the picker.
+function groupSectionsByCourse(sections, courseCodes) {
+    const groups = new Map();
+    (courseCodes || []).forEach(code => groups.set(code, { code, lectures: [], labs: [] }));
+    (sections || []).forEach(section => {
+        if (!section || section.error) return;
+        const code = catalogBaseCode(section.code);
+        if (!groups.has(code)) groups.set(code, { code, lectures: [], labs: [] });
+        const group = groups.get(code);
+        (isLabSection(section) ? group.labs : group.lectures).push(section);
+    });
+    groups.forEach(group => {
+        group.lectures.sort(compareSections);
+        group.labs.sort(compareSections);
+    });
+    return Array.from(groups.values());
+}
+
+// Saved CRN wins when it still exists in the scrape; otherwise fall back to
+// the first lecture. Labs stay opt-in (no lab) unless the course has no lecture
+// sections at all, in which case a lab-only course defaults to its first lab.
+function resolveCourseSelection(group, selections, termCode) {
+    const saved = selections[selectionKey(termCode, group.code)] || {};
+    const lecture = group.lectures.find(s => String(s.crn) === String(saved.lecture || ''))
+        || group.lectures[0] || null;
+    const lab = group.labs.find(s => String(s.crn) === String(saved.lab || ''))
+        || (!lecture ? group.labs[0] || null : null);
+    return { lecture, lab };
+}
+
+function isOnlineSection(section) {
+    return !(section.days && section.days.length) && !section.start && !section.end
+        && /online/i.test(section.title || '');
+}
+
+// "Sec 01 — MWF 9:00–10:15 AM · PARS N108"
+function sectionOptionLabel(section, kind) {
+    const token = sectionToken(section) || '—';
+    const place = [section.building, section.room].filter(Boolean).join(' ');
+    const bits = [scheduleLabel(section, { online: isOnlineSection(section) }), place].filter(Boolean);
+    return `${kind === 'lab' ? 'Lab' : 'Sec'} ${token}${bits.length ? ' — ' + bits.join(' · ') : ''}`;
+}
+
+function renderSectionPicker(termCode, groups, selections, open) {
+    if (!groups.length) return '';
+    const rows = groups.map(group => {
+        const choice = resolveCourseSelection(group, selections, termCode);
+        const lectureOptions = group.lectures.length
+            ? group.lectures.map(s => `<option value="${escapeHTML(s.crn)}" ${choice.lecture && String(s.crn) === String(choice.lecture.crn) ? 'selected' : ''}>${escapeHTML(sectionOptionLabel(s, 'lecture'))}</option>`).join('')
+            : '<option value="">No sections found</option>';
+        const labOptions = group.labs.length
+            ? `<option value="" ${choice.lab ? '' : 'selected'}>No lab</option>` + group.labs.map(s => `<option value="${escapeHTML(s.crn)}" ${choice.lab && String(s.crn) === String(choice.lab.crn) ? 'selected' : ''}>${escapeHTML(sectionOptionLabel(s, 'lab'))}</option>`).join('')
+            : '';
+        return `
+        <div class="sched-picker-row">
+            <span class="sched-picker-course">${escapeHTML(group.code)}</span>
+            <label class="sched-picker-field"><span>Class</span>
+                <select data-course="${escapeHTML(group.code)}" data-kind="lecture" ${group.lectures.length ? '' : 'disabled'}>${lectureOptions}</select>
+            </label>
+            ${group.labs.length ? `<label class="sched-picker-field sched-picker-lab"><span>Lab</span>
+                <select data-course="${escapeHTML(group.code)}" data-kind="lab">${labOptions}</select>
+            </label>` : ''}
+        </div>`;
+    }).join('');
+    const count = groups.length;
+    return `
+    <details class="sched-picker" ${open ? 'open' : ''}>
+        <summary>Choose sections <span class="sched-picker-sub">${count} course${count === 1 ? '' : 's'}</span></summary>
+        <div class="sched-picker-list">${rows}</div>
+    </details>`;
+}
+
+function renderScheduleGrid(container, sections, courseCodes, termCode, options = {}) {
+    const courseCount = courseCodes.length;
     const hiddenCourses = getHiddenCourses();
-    const conflicts = computeTimeConflicts(sections);
     const valid = (sections || []).filter(s => !s.error);
-    const withTimes = valid.filter(s => {
+    const errors = (sections || []).filter(s => s.error);
+    const groups = groupSectionsByCourse(valid, courseCodes);
+    const selections = loadSelections();
+
+    // Only the chosen lecture + lab for each course make it onto the grid.
+    const selected = [];
+    groups.forEach(group => {
+        const choice = resolveCourseSelection(group, selections, termCode);
+        if (choice.lecture) selected.push(choice.lecture);
+        if (choice.lab) selected.push(choice.lab);
+    });
+
+    const conflicts = computeTimeConflicts(selected);
+    const withTimes = selected.filter(s => {
         const start = toMinutes(s.start);
         const end = toMinutes(s.end);
         return parseMeetDays(s.days).length && start !== null && end !== null && start < end;
     });
-    const noMeetingTime = valid.filter(s => !withTimes.includes(s));
-    const errors = (sections || []).filter(s => s.error);
-    const { blocks, days, minStart, duration, rows } = buildGridData(sections, hiddenCourses);
+    const noMeetingTime = selected.filter(s => !withTimes.includes(s));
+    const { blocks, days, minStart, duration, rows } = buildGridData(selected, hiddenCourses);
+
+    // Auto-open the picker on first use only when a course actually has choices
+    // to make; afterwards it stays collapsed unless the user opened it.
+    const anySaved = groups.some(group => {
+        const saved = selections[selectionKey(termCode, group.code)];
+        return !!(saved && (saved.lecture || saved.lab));
+    });
+    const needsChoice = groups.some(group => group.lectures.length > 1 || group.labs.length);
+    const pickerOpen = options.pickerOpen !== undefined
+        ? !!options.pickerOpen
+        : (!anySaved && needsChoice);
+    const pickerHtml = renderSectionPicker(termCode, groups, selections, pickerOpen);
 
     const termHtml = `<span class="sched-term">${escapeHTML(termLabel(termCode))}</span>`;
     const countLabel = `<span class="sched-crns">${courseCount} course${courseCount === 1 ? '' : 's'}</span>`;
@@ -218,14 +392,14 @@ function renderScheduleGrid(container, sections, courseCount, termCode) {
 
     const nonAttendHtml = noMeetingTime.length ? `
         <div class="sched-nonattend"><span class="sched-na-title">No set meeting time</span>
-        ${noMeetingTime.map(s => `<span class="sched-na-chip">${escapeHTML(s.code || ('CRN ' + s.crn))} · ${escapeHTML(scheduleLabel(s, { online: /online/i.test(s.title || '') }))}</span>`).join('')}
+        ${noMeetingTime.map(s => `<span class="sched-na-chip">${escapeHTML(s.code || ('CRN ' + s.crn))} · ${escapeHTML(scheduleLabel(s, { online: isOnlineSection(s) }))}</span>`).join('')}
         </div>` : '';
 
     const errorHtml = errors.length ? `
         <div class="sched-nonattend sched-errors">${errors.map(s => `<span class="sched-na-chip sched-error-chip">CRN ${escapeHTML(s.crn)} — ${escapeHTML(s.error)}</span>`).join('')}</div>` : '';
 
     if (!blocks.length) {
-        container.innerHTML = topbar + conflictHtml + `
+        container.innerHTML = topbar + conflictHtml + pickerHtml + `
         <div class="sched-empty">No published class times found for your current courses in ${escapeHTML(termLabel(termCode))} — sections may be online, TBA, or not yet published on courses.unh.edu.</div>` + nonAttendHtml + errorHtml;
     } else {
         const dayCount = days.length;
@@ -254,11 +428,17 @@ function renderScheduleGrid(container, sections, courseCount, termCode) {
             return `<div class="sched-day" style="grid-column:${col};grid-row:2 / span ${rows};">${cellBlocks}</div>`;
         }).join('');
 
-        container.innerHTML = topbar + conflictHtml +
+        container.innerHTML = topbar + conflictHtml + pickerHtml +
             `<div class="sched-grid" style="--sched-cols:${dayCount};">${headerCells.join('')}${timeRows}${dayCells}</div>` +
             nonAttendHtml + errorHtml;
     }
 
+    container.querySelectorAll('.sched-picker select').forEach(select => {
+        select.addEventListener('change', () => {
+            saveSelection(termCode, select.getAttribute('data-course'), select.getAttribute('data-kind'), select.value);
+            renderScheduleGrid(container, sections, courseCodes, termCode, { pickerOpen: true });
+        });
+    });
     const refresh = container.querySelector('.sched-refresh-btn');
     if (refresh) refresh.addEventListener('click', () => renderScheduleView(container, true));
 }
@@ -291,5 +471,5 @@ export async function renderScheduleView(container, force = false) {
         return;
     }
 
-    renderScheduleGrid(container, sections, courseCodes.length, termCode);
+    renderScheduleGrid(container, sections, courseCodes, termCode);
 }

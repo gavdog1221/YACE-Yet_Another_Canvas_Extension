@@ -158,6 +158,8 @@ function parseCoursePageHtml(html, crn) {
     const section = {
         crn: String(crn),
         code: '',
+        section: '',
+        component: '',
         title: '',
         credits: '',
         classSize: null,
@@ -177,12 +179,25 @@ function parseCoursePageHtml(html, crn) {
     let title = String((html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)["']/i) || ['', ''])[1])
         || String((html.match(/<title>([\s\S]*?)<\/title>/i) || ['', ''])[1]);
     title = decodeEntities(title).replace(/\|\s*Course Search\s*$/i, '').trim();
-    const tm = title.match(/^(.+?)\s+\((\d+)\)\s*-\s*(.+)$/);
+    // "CHEM 403 (L05) - General Chemistry I". Section tokens are not always
+    // numeric: labs are "L01"/"LM1", honors/non-lab variants use "NL1", and
+    // Manchester sections use "M1". Keep the token so the dashboard can group
+    // and select individual sections instead of only the first numeric one.
+    const tm = title.match(/^(.+?)\s+\(([A-Za-z0-9]{1,5})\)\s*-\s*(.+)$/);
     if (tm) {
-        section.code = tm[1].replace(/\s+/g, ' ') + '-' + tm[2];
+        section.section = tm[2].toUpperCase();
+        section.code = tm[1].replace(/\s+/g, ' ') + '-' + section.section;
         section.title = tm[3];
     } else {
         section.title = title;
+    }
+
+    // Section component ("General Chemistry I Lab" vs "General Chemistry I").
+    // The schedule tab uses this to tell labs apart from their lecture, which
+    // is much more reliable than guessing from the section token alone.
+    const subtitleM = html.match(/<h2[^>]*class=["'][^"']*\bsubtitle\b[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i);
+    if (subtitleM) {
+        section.component = decodeEntities(subtitleM[1].replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
     }
 
     section.credits = textUntilTag(html, '<strong>Credits:</strong>');

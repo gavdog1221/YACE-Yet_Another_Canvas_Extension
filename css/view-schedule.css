@@ -29,6 +29,53 @@
 }
 .sched-refresh-btn:hover { background: var(--accent-soft) !important; border-color: var(--primary-accent) !important; color: #ffffff !important; }
 
+/* Per-course section/lab picker. Collapsed by default once the user has saved
+ * choices; auto-opened on first use when any course has multiple sections. */
+.sched-picker {
+  flex-shrink: 0 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.sched-picker summary {
+  list-style: none !important; cursor: pointer !important; padding: 5px 10px !important;
+  display: flex !important; align-items: center !important; gap: 6px !important;
+  font-size: 10.5px !important; font-weight: 800 !important; letter-spacing: 0.5px !important;
+  text-transform: uppercase !important; color: var(--text-secondary) !important;
+}
+.sched-picker summary::-webkit-details-marker { display: none !important; }
+.sched-picker summary::before { content: '▸' !important; color: var(--text-tertiary) !important; }
+.sched-picker[open] summary::before { content: '▾' !important; }
+.sched-picker-sub {
+  margin-left: auto !important; font-size: 9.5px !important; font-weight: 700 !important;
+  letter-spacing: 0 !important; text-transform: none !important; color: var(--text-tertiary) !important;
+}
+.sched-picker-list {
+  display: flex !important; flex-direction: column !important; gap: 5px !important;
+  padding: 0 10px 8px !important;
+}
+.sched-picker-row { display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: wrap !important; }
+.sched-picker-course {
+  min-width: 72px !important; font-size: 10.5px !important; font-weight: 800 !important;
+  color: var(--text-primary) !important;
+}
+.sched-picker-field {
+  display: flex !important; align-items: center !important; gap: 5px !important;
+  flex: 1 1 200px !important; min-width: 0 !important;
+}
+.sched-picker-field > span {
+  flex-shrink: 0 !important; font-size: 9px !important; font-weight: 800 !important;
+  letter-spacing: 0.4px !important; text-transform: uppercase !important; color: var(--text-tertiary) !important;
+}
+.sched-picker-field select {
+  flex: 1 1 auto !important; min-width: 0 !important;
+  background: rgba(0, 0, 0, 0.3) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0; color: var(--text-primary) !important; font-size: 10.5px !important;
+  font-weight: 600 !important; padding: 3px 5px !important; outline: none !important; cursor: pointer !important;
+}
+.sched-picker-field select:hover { border-color: var(--primary-accent) !important; }
+.sched-picker-field select:disabled { opacity: 0.55 !important; cursor: default !important; }
+.sched-picker-lab select { color: var(--primary-accent) !important; }
+
 .sched-conflict-warn {
   font-size: 11px !important; font-weight: 700 !important; color: var(--warning) !important;
   background: var(--warning-soft) !important; border: 1px solid rgba(255, 159, 10, 0.35) !important;

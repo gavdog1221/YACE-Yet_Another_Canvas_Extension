@@ -32,7 +32,8 @@ export const STORAGE_KEY_OPTIONS = 'canvas_mod_tasks_options_v1';
 
 export const STORAGE_KEY_DINING_MENUS = 'canvas_mod_tasks_dining_menus_v1';
 export const STORAGE_KEY_ANNOUNCEMENTS_CACHE_TIME = 'canvas_mod_tasks_announcements_cache_time_v1';
-export const STORAGE_KEY_SCHEDULE_CACHE = 'canvas_mod_tasks_schedule_cache_v1';
+export const STORAGE_KEY_SCHEDULE_CACHE = 'canvas_mod_tasks_schedule_cache_v2';
+export const STORAGE_KEY_SCHEDULE_SELECTIONS = 'canvas_mod_tasks_schedule_selections_v1';
 export const STORAGE_KEY_DASHBOARD_PANELS = 'canvas_mod_tasks_dashboard_panels_v1';
 export const STORAGE_KEY_DASHBOARD_PANEL_ORDER = 'canvas_mod_tasks_dashboard_panel_order_v1';
 export const STORAGE_KEY_NOTES = 'canvas_mod_tasks_notes_v1';
