@@ -98,6 +98,7 @@ export function renderGeneralView(listContainer, hiddenCourses) {
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.gradesUrl || '')}" data-preview-title="Grades" title="Preview the Grades page">📊 Grades</button>
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.peopleUrl || '')}" data-preview-title="People" title="Preview the class roster">👥 People</button>
           <button type="button" class="resource-link-pill gci-open-btn" data-preview-url="${escapeHTML(res.homeUrl || '')}" data-preview-title="Home" title="Preview the course home page">🏠 Home</button>
+          <a class="resource-link-pill gci-gradescope-link ${res.gradescopeUrl ? '' : 'is-empty'}" href="${escapeHTML(res.gradescopeUrl || 'https://www.gradescope.com/')}" target="_blank" rel="noopener noreferrer" title="${escapeHTML(res.gradescopeUrl ? 'Open this course on Gradescope (new tab)' : 'Gradescope course not found for this class — opens the Gradescope dashboard (new tab)')}">🎓 Gradescope</a>
         </div>
 
         ${officeHoursLine ? `<div class="gci-office-hours">🕐 ${escapeHTML(officeHoursLine)}</div>` : ''}

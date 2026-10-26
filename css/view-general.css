@@ -183,6 +183,13 @@
   line-height: 1.2 !important;
   cursor: pointer !important;
 }
+/* External link (not an in-app preview): Gradescope blocks framing and isn't
+   reachable from the Canvas origin, so this pill is a plain new-tab anchor. */
+.gci-gradescope-link {
+  font-family: inherit !important;
+  line-height: 1.2 !important;
+  cursor: pointer !important;
+}
 
 @container yace (max-width: 435px) {
   .resource-link-pill { font-size: 9.5px !important; padding: 4px 8px !important; }

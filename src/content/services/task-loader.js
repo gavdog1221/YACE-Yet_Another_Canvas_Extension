@@ -632,7 +632,11 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
       }
       updateAnnouncementBadge();
 
-      const { tasksByCourse: gsCourseMap, gradesByCourse: gsGradesByCourse } = await gradescopePromise;
+      const {
+        tasksByCourse: gsCourseMap,
+        gradesByCourse: gsGradesByCourse,
+        courseUrlsByCourse: gsCourseUrlsByKey
+      } = await gradescopePromise;
       // fetchGradescopeData already skips hidden courses — this guard is a
       // safety net in case hidden flags changed mid-scan.
       const hiddenSet = new Set(hiddenCourseKeys);
@@ -642,6 +646,18 @@ export async function loadTasks(showLoadingUI = true, opts = {}) {
           unifiedCourseMap[gsKey] = { name: gsCourseMap[gsKey].name, canvasCourseId: null, tasks: [] };
         }
         unifiedCourseMap[gsKey].tasks.push(...gsCourseMap[gsKey].tasks);
+      });
+
+      // Park each course's Gradescope page on its resources so the Info tab's
+      // Gradescope button can deep-link straight there. Written after the Canvas
+      // scan, so `resources` may not exist yet (Gradescope-only course keys) —
+      // and it rides along in the cached course map like every other resource.
+      Object.entries(gsCourseUrlsByKey || {}).forEach(([gsKey, gsUrl]) => {
+        if (hiddenSet.has(gsKey) || !gsUrl) return;
+        const target = unifiedCourseMap[gsKey];
+        if (!target) return;
+        target.resources = target.resources || {};
+        target.resources.gradescopeUrl = gsUrl;
       });
 
       if (showLoadingUI) {

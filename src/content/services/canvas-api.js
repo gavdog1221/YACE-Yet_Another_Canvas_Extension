@@ -139,13 +139,17 @@ function parseGradescopeScore(text) {
 export async function fetchGradescopeData(hiddenCourseKeys = []) {
     const gsTasksByCourse = {};
     const gsGradesByCourse = {};
+    // Normalized course code -> that course's Gradescope page. The Info panel
+    // links to it, so it has to be collected even when a course produced no
+    // tasks/grades (an empty Gradescope course still has a page worth opening).
+    const gsCourseUrlsByKey = {};
 
     try {
       let dashRes = await fetch('https://www.gradescope.com/', { credentials: 'include' });
       if (!dashRes.ok) {
         dashRes = await fetch('https://www.gradescope.com/courses', { credentials: 'include' });
       }
-      if (!dashRes.ok) return { tasksByCourse: gsTasksByCourse, gradesByCourse: gsGradesByCourse };
+      if (!dashRes.ok) return { tasksByCourse: gsTasksByCourse, gradesByCourse: gsGradesByCourse, courseUrlsByCourse: gsCourseUrlsByKey };
 
       const htmlText = await dashRes.text();
       const parser = new DOMParser();
@@ -170,6 +174,7 @@ export async function fetchGradescopeData(hiddenCourseKeys = []) {
         if (hiddenCourseKeys.includes(normalizeCourseCode(name))) return;
         if (!courseMap.has(courseId) && name) {
           courseMap.set(courseId, { id: courseId, name: name, url: fullUrl });
+          gsCourseUrlsByKey[normalizeCourseCode(name)] = fullUrl;
         }
       });
 
@@ -310,7 +315,7 @@ export async function fetchGradescopeData(hiddenCourseKeys = []) {
       console.warn('[Gradescope] Error:', e);
     }
 
-    return { tasksByCourse: gsTasksByCourse, gradesByCourse: gsGradesByCourse };
+    return { tasksByCourse: gsTasksByCourse, gradesByCourse: gsGradesByCourse, courseUrlsByCourse: gsCourseUrlsByKey };
   }
 
 export async function fetchCanvasAnnouncements(headers, activeCourses, courseNameById) {
